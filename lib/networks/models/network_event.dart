@@ -4,13 +4,31 @@ import 'package:flutter/material.dart';
 class NetworkEvent {
   NetworkEvent({
     required this.request,
-    this.response,
-    this.error,
-  });
+    Response? response,
+    DioError? error,
+  })  : requestTime = DateTime.now(),
+        _response = response,
+        _responseTime =
+            response != null || error != null ? DateTime.now() : null;
 
-  RequestOptions request;
-  Response? response;
-  DioError? error;
+  final RequestOptions request;
+  final DateTime requestTime;
+  DateTime? _responseTime;
+  DateTime? get responseTime => _responseTime;
+
+  Response? _response;
+  Response? get response => _response;
+  set setResponse(Response response) {
+    _response = response;
+    _responseTime = DateTime.now();
+  }
+
+  DioError? _error;
+  DioError? get error => _error;
+  set setError(DioError error) {
+    _error = error;
+    _responseTime = DateTime.now();
+  }
 
   NetworkRequestStatus get status {
     var status = NetworkRequestStatus.running;

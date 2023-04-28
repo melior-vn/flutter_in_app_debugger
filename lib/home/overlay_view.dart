@@ -26,6 +26,9 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   final _requests = <NetworkEvent>[];
   final _requestsStream = StreamController<NetworkEvent>.broadcast();
 
+  List<NetworkEvent> get requests => _requests;
+  StreamController<NetworkEvent> get requestsStream => _requestsStream;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +48,12 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     });
   }
 
+  @override
+  void dispose() {
+    _requestsStream.close();
+    super.dispose();
+  }
+
   NetworkEvent addNetworkRequest({required RequestOptions request}) {
     final networkEvent = NetworkEvent(request: request);
     _requests.insert(0, networkEvent);
@@ -56,10 +65,9 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     final networkEventIndex = _requests.indexWhere((element) =>
         element.request.hashCode == response.requestOptions.hashCode);
     if (networkEventIndex != -1) {
-      final networkEvent = _requests[networkEventIndex];
-      networkEvent.response = response;
-      _requestsStream.add(networkEvent);
-      return networkEvent;
+      _requests[networkEventIndex].setResponse = response;
+      _requestsStream.add(_requests[networkEventIndex]);
+      return _requests[networkEventIndex];
     } else {
       debugPrint('not found request');
       return null;
@@ -71,7 +79,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
         element.request.hashCode == dioError.requestOptions.hashCode);
     if (networkEventIndex != -1) {
       final networkEvent = _requests[networkEventIndex];
-      networkEvent.error = dioError;
+      networkEvent.setError = dioError;
       _requestsStream.add(networkEvent);
       return networkEvent;
     } else {
@@ -112,9 +120,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SettingScreen(
-                      networkRequest: _requests,
-                    ),
+                    builder: (context) => const SettingScreen(),
                   ),
                 );
                 await _animationController.forward();

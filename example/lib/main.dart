@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/home/overlay_view.dart';
+import 'package:flutter_in_app_debugger/interceptors/melior_dio_interceptor.dart';
 
 // ..interceptors.add(CustomInterceptors()),
 // if (KShipUrl.currentEnv == ENVIRONMENT.DEBUG)
@@ -20,6 +21,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    MeliorDioInterceptors().fakeData(
+      duration: const Duration(seconds: 1),
+      numberOfRepetions: 5,
+    );
   }
 
   @override

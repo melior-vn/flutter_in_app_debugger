@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_in_app_debugger/configs/configs.dart';
+import 'package:flutter_in_app_debugger/home/overlay_view.dart';
 
 import 'components/network_item_widget.dart';
-import 'models/network_event.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({
     Key? key,
-    required this.networkRequest,
   }) : super(key: key);
-
-  final List<NetworkEvent> networkRequest;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
@@ -38,31 +36,41 @@ class _SettingScreenState extends State<SettingScreen> {
         elevation: 0,
       ),
       backgroundColor: Colors.white,
-      body: ListView.separated(
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: NetworkDebuggerHeaderWidget(),
-            );
-          }
-          // For the last line
-          else if (index == widget.networkRequest.length) {
-            return const SizedBox.shrink();
-          } else {
-            return NetworkItemWidget(
-              networkEvent: widget.networkRequest[index - 1],
-            );
-          }
-        },
-        separatorBuilder: (context, index) => Container(
-          margin: const EdgeInsets.only(top: 4),
-          width: double.infinity,
-          height: 1,
-          color: Colors.grey.withOpacity(0.1),
-        ),
-        itemCount: widget.networkRequest.length + 1,
-      ),
+      body: FlutterInAppDebuggerView.globalKey.currentState?.requestsStream ==
+              null
+          ? const Center(
+              child: Text('Requests stream has not been initiated yet'))
+          : StreamBuilder(
+              stream: FlutterInAppDebuggerView
+                  .globalKey.currentState!.requestsStream.stream,
+              builder: (context, _) {
+                final networkRequest =
+                    FlutterInAppDebuggerView.globalKey.currentState?.requests ??
+                        [];
+                return ListView.separated(
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return const NetworkDebuggerHeaderWidget();
+                    }
+                    // For the last line
+                    else if (index == networkRequest.length + 1) {
+                      return const SizedBox.shrink();
+                    } else {
+                      return NetworkItemWidget(
+                        networkEvent: networkRequest[index - 1],
+                      );
+                    }
+                  },
+                  separatorBuilder: (context, index) => Container(
+                    margin: const EdgeInsets.only(top: DEFAULT_PADDING / 2),
+                    width: double.infinity,
+                    height: 1,
+                    color: Colors.grey.withOpacity(0.1),
+                  ),
+                  itemCount: networkRequest.length + 2,
+                );
+              },
+            ),
     );
   }
 }
@@ -75,10 +83,12 @@ class NetworkDebuggerHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: const [
+        SizedBox(width: DEFAULT_PADDING),
         NetworkDebuggerHeaderItemWidget(title: 'API'),
+        Spacer(),
         NetworkDebuggerHeaderItemWidget(title: 'STATUS'),
+        SizedBox(width: DEFAULT_PADDING + 18)
       ],
     );
   }

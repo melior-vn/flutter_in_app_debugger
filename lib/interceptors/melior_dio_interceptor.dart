@@ -49,26 +49,40 @@ class MeliorDioInterceptors extends Interceptor {
     DioError? fakeError,
     Duration duration = const Duration(seconds: 1),
     Duration responseTime = const Duration(seconds: 1),
+    int? numberOfRepetions,
   }) {
-    return Timer.periodic(duration, (timer) {
-      final requestOptions =
-          RequestOptions(path: 'fakePath/fakePath', method: 'POST');
+    var currentNumberOfRepetions = 0;
+    final timer = Timer.periodic(duration, (timer) {
+      if (numberOfRepetions != null) {
+        currentNumberOfRepetions += 1;
+      }
+
+      final requestOptions = RequestOptions(
+          path: 'fakePath/fakePath/$currentNumberOfRepetions', method: 'POST');
       _onRequest(requestOptions);
-      switch (fakeDataType) {
-        case FakeDataType.response:
-          _onReponse(fakeResponse ??= Response(
-            requestOptions: requestOptions,
-            statusCode: 200,
-            statusMessage: 'Success',
-          ));
-          break;
-        case FakeDataType.error:
-          _onError(fakeError ??= DioError(
-            requestOptions: requestOptions,
-            message: 'DioError',
-          ));
-          break;
+      Future.delayed(responseTime).then((value) {
+        switch (fakeDataType) {
+          case FakeDataType.response:
+            _onReponse(fakeResponse ??
+                Response(
+                  requestOptions: requestOptions,
+                  statusCode: 200,
+                  statusMessage: 'Success',
+                ));
+            break;
+          case FakeDataType.error:
+            _onError(fakeError ??
+                DioError(
+                  requestOptions: requestOptions,
+                  message: 'DioError',
+                ));
+            break;
+        }
+      });
+      if (currentNumberOfRepetions == numberOfRepetions) {
+        timer.cancel();
       }
     });
+    return timer;
   }
 }

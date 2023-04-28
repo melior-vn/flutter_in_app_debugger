@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_in_app_debugger/configs/configs.dart';
+import 'package:intl/intl.dart';
 
 import '../models/network_event.dart';
 
@@ -12,12 +14,25 @@ class NetworkItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var subTitle = DateFormat('kk:mm:ss').format(networkEvent.requestTime);
+    if (networkEvent.responseTime != null) {
+      subTitle += ' - ' +
+          networkEvent.responseTime!
+              .difference(networkEvent.requestTime)
+              .inMilliseconds
+              .toString() +
+          'ms';
+    }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      padding: const EdgeInsets.fromLTRB(
+        DEFAULT_PADDING,
+        DEFAULT_PADDING * 2 / 3,
+        DEFAULT_PADDING * 1.8 / 3,
+        0,
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
+          Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +46,7 @@ class NetworkItemWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  networkEvent.request.method,
+                  subTitle,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -78,6 +93,14 @@ class NetworkItemWidget extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(left: DEFAULT_PADDING * 1.1 / 3, right: 0),
+            child: Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
             ),
           )
         ],
