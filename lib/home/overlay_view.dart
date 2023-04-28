@@ -40,7 +40,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
           curve: Curves.ease,
         )));
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
       _showOverLay();
     });
   }
@@ -83,8 +83,11 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   void _showOverLay() async {
     final viewInsert = MediaQuery.of(context).padding;
     _settingOffset = Offset(
-      viewInsert.left + 16,
-      viewInsert.top + 16,
+      viewInsert.left + 46,
+      viewInsert.top +
+          46 +
+          MediaQuery.of(context).viewPadding.top +
+          MediaQuery.of(context).viewInsets.top,
     );
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
@@ -101,7 +104,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
                 (_settingOffset?.dx ?? 0) + details.delta.dx,
                 (_settingOffset?.dy ?? 0) + details.delta.dy,
               );
-              overlayState.setState(() {});
+              overlayState?.setState(() {});
             },
             child: FloatingActionButton(
               onPressed: () async {
@@ -115,7 +118,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
                   ),
                 );
                 await _animationController.forward();
-                overlayState.insert(_overlayEntry);
+                overlayState?.insert(_overlayEntry);
               },
               backgroundColor: Colors.grey,
               mini: true,
@@ -128,10 +131,10 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
       ),
     );
     _animationController.addListener(() {
-      overlayState.setState(() {});
+      overlayState?.setState(() {});
     });
     await _animationController.forward();
-    overlayState.insert(_overlayEntry);
+    overlayState?.insert(_overlayEntry);
 
     // await Future.delayed(const Duration(seconds: 5))
     //     .whenComplete(() => animationController!.reverse())
