@@ -12,27 +12,27 @@ class NetworkDebuggerHeaderWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('POST'),
-                  Row(
-                    children: [Text('1')],
-                  )
-                ],
-              ),
-            )
-          ],
-        ),
+        // Row(
+        //   children: [
+        //     Container(
+        //       width: 80,
+        //       height: 80,
+        //       decoration: BoxDecoration(
+        //         border: Border.all(color: Colors.grey),
+        //         borderRadius: BorderRadius.circular(20),
+        //       ),
+        //       child: Column(
+        //         mainAxisSize: MainAxisSize.min,
+        //         children: [
+        //           Text('POST'),
+        //           Row(
+        //             children: [Text('1')],
+        //           )
+        //         ],
+        //       ),
+        //     )
+        //   ],
+        // ),
         Row(
           children: const [
             SizedBox(width: DEFAULT_PADDING),

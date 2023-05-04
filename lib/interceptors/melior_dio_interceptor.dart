@@ -16,6 +16,10 @@ class MeliorDioInterceptors extends Interceptor {
   void _onRequest(RequestOptions options) {
     FlutterInAppDebuggerView.globalKey.currentState?.addNetworkRequest(
       request: options,
+      baseUrl: options.baseUrl,
+      path: options.path,
+      method: options.method,
+      data: options.data,
     );
   }
 
@@ -28,6 +32,8 @@ class MeliorDioInterceptors extends Interceptor {
   void _onReponse(Response response) {
     FlutterInAppDebuggerView.globalKey.currentState?.addNetworkResponse(
       response: response,
+      statusCode: response.statusCode ?? 999,
+      responseData: response.data,
     );
   }
 
@@ -58,17 +64,23 @@ class MeliorDioInterceptors extends Interceptor {
       }
 
       final requestOptions = RequestOptions(
-          path: 'fakePath/fakePath/$currentNumberOfRepetions', method: 'POST');
+        path: 'fakePath/fakePath/$currentNumberOfRepetions',
+        method: 'POST',
+        data: {'key': 'value'},
+      );
       _onRequest(requestOptions);
       Future.delayed(responseTime).then((value) {
         switch (fakeDataType) {
           case FakeDataType.response:
-            _onReponse(fakeResponse ??
-                Response(
-                  requestOptions: requestOptions,
-                  statusCode: 200,
-                  statusMessage: 'Success',
-                ));
+            _onReponse(
+              fakeResponse ??
+                  Response(
+                    requestOptions: requestOptions,
+                    statusCode: 200,
+                    statusMessage: 'Success',
+                    data: {'key': 'value'},
+                  ),
+            );
             break;
           case FakeDataType.error:
             _onError(fakeError ??

@@ -75,7 +75,14 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.2"
+    version: "0.0.3"
+  flutter_json_view:
+    dependency: transitive
+    description:
+      name: flutter_json_view
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -101,7 +108,7 @@ packages:
       name: intl
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.18.1"
+    version: "0.17.0"
   lints:
     dependency: transitive
     description:

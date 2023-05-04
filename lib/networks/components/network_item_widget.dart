@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/configs/configs.dart';
+import 'package:flutter_in_app_debugger/networks/views/request_detail_view.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
@@ -28,55 +29,65 @@ class NetworkItemWidget extends StatelessWidget {
               .toString() +
           ' ms';
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        DEFAULT_PADDING * 0.9,
-        DEFAULT_PADDING * 2 / 3,
-        DEFAULT_PADDING * 1.8 / 3,
-        0,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RequestDetailView(networkEvent: networkEvent),
+        ),
       ),
-      child: Row(
-        children: [
-          if (logo != null)
-            Padding(
-              padding: logoPadding,
-              child: logo!,
-            ),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  networkEvent.request.path,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          DEFAULT_PADDING * 0.9,
+          DEFAULT_PADDING * 2 / 3,
+          DEFAULT_PADDING * 1.8 / 3,
+          0,
+        ),
+        child: Row(
+          children: [
+            if (logo != null)
+              Padding(
+                padding: logoPadding,
+                child: logo!,
+              ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    networkEvent.request.path,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                ),
-                const SizedBox(height: DEFAULT_PADDING / 4),
-                Text(
-                  subTitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w400,
-                  ),
-                )
-              ],
+                  const SizedBox(height: DEFAULT_PADDING / 4),
+                  Text(
+                    subTitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  )
+                ],
+              ),
             ),
-          ),
-          NetworkStatusWidget(networkEvent: networkEvent),
-          const Padding(
-            padding: EdgeInsets.only(left: DEFAULT_PADDING * 1.4 / 3, right: 0),
-            child: Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey,
-              size: 16,
-            ),
-          )
-        ],
+            NetworkStatusWidget(networkEvent: networkEvent),
+            const Padding(
+              padding:
+                  EdgeInsets.only(left: DEFAULT_PADDING * 1.4 / 3, right: 0),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey,
+                size: 16,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

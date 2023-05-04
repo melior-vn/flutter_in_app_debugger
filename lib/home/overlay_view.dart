@@ -54,13 +54,20 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     super.dispose();
   }
 
-  NetworkEvent addNetworkRequest({required RequestOptions request}) {
+  NetworkEvent addNetworkRequest({
+    required dynamic request,
+    required String baseUrl,
+    required String path,
+    required String method,
+    Map<String, dynamic>? data,
+  }) {
     final networkEvent = NetworkEvent(
         request: NetworkRequest(
-      baseUrl: request.baseUrl,
-      path: request.path,
-      method: request.method,
+      baseUrl: baseUrl,
+      path: path,
+      method: method,
       requestObject: request,
+      requestData: data,
     ));
 
     _requests.insert(0, networkEvent);
@@ -68,14 +75,19 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     return networkEvent;
   }
 
-  NetworkEvent? addNetworkResponse({required Response response}) {
+  NetworkEvent? addNetworkResponse({
+    required dynamic response,
+    required int statusCode,
+    Map<String, dynamic>? responseData,
+  }) {
     final networkEventIndex = _requests.indexWhere((element) =>
         element.request.requestObject.hashCode ==
         response.requestOptions.hashCode);
     if (networkEventIndex != -1) {
       _requests[networkEventIndex].setResponse = NetworkResponse(
         response: response,
-        statusCode: response.statusCode ?? 999,
+        statusCode: statusCode,
+        responseData: responseData,
       );
       _requestsStream.add(_requests[networkEventIndex]);
       return _requests[networkEventIndex];
