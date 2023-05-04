@@ -24,6 +24,7 @@ class _MyAppState extends State<MyApp> {
     MeliorDioInterceptors().fakeData(
       duration: const Duration(seconds: 1),
       numberOfRepetions: 5,
+      fakeDataType: FakeDataType.randomResponse,
     );
   }
 

@@ -101,7 +101,8 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   NetworkEvent? addNetworkError({required DioError dioError}) {
     final networkEventIndex = _requests.indexWhere((element) =>
-        element.request.hashCode == dioError.requestOptions.hashCode);
+        element.request.requestObject.hashCode ==
+        dioError.requestOptions.hashCode);
     if (networkEventIndex != -1) {
       final networkEvent = _requests[networkEventIndex];
       networkEvent.setError = NetworkError(error: dioError);

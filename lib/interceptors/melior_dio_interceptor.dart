@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import '../networks/models/models.dart';
 
 import '../home/overlay_view.dart';
 
-enum FakeDataType { response, error, onlyRequest }
+enum FakeDataType { response, error, onlyRequest, randomResponse }
 
 class MeliorDioInterceptors extends Interceptor {
   @override
@@ -89,6 +90,26 @@ class MeliorDioInterceptors extends Interceptor {
                 DioError(
                   requestOptions: requestOptions,
                 ));
+            break;
+          case FakeDataType.randomResponse:
+            final isResponse = Random().nextBool();
+            if (isResponse) {
+              _onReponse(
+                fakeResponse ??
+                    Response(
+                      requestOptions: requestOptions,
+                      statusCode: 200,
+                      statusMessage: 'Success',
+                      data: {'key': 'value'},
+                    ),
+              );
+            } else {
+              _onError(fakeError ??
+                  DioError(
+                    requestOptions: requestOptions,
+                  ));
+            }
+
             break;
           case FakeDataType.onlyRequest:
             break;
