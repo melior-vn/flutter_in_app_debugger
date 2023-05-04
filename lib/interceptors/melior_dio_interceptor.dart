@@ -86,7 +86,6 @@ class MeliorDioInterceptors extends Interceptor {
             _onError(fakeError ??
                 DioError(
                   requestOptions: requestOptions,
-                  message: 'DioError',
                 ));
             break;
           case FakeDataType.onlyRequest:
