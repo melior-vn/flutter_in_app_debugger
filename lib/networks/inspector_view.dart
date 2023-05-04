@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/configs/configs.dart';
 import 'package:flutter_in_app_debugger/home/overlay_view.dart';
 
+import 'components/dio_logo_widget.dart';
+import 'components/network_debugger_header_widget.dart';
 import 'components/network_item_widget.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -58,11 +60,12 @@ class _SettingScreenState extends State<SettingScreen> {
                     } else {
                       return NetworkItemWidget(
                         networkEvent: networkRequest[index - 1],
+                        logo: const DioLogoWidget(),
                       );
                     }
                   },
                   separatorBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.only(top: DEFAULT_PADDING / 2),
+                    margin: const EdgeInsets.only(top: DEFAULT_PADDING / 1.8),
                     width: double.infinity,
                     height: 1,
                     color: Colors.grey.withOpacity(0.1),
@@ -71,45 +74,6 @@ class _SettingScreenState extends State<SettingScreen> {
                 );
               },
             ),
-    );
-  }
-}
-
-class NetworkDebuggerHeaderWidget extends StatelessWidget {
-  const NetworkDebuggerHeaderWidget({
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: const [
-        SizedBox(width: DEFAULT_PADDING),
-        NetworkDebuggerHeaderItemWidget(title: 'API'),
-        Spacer(),
-        NetworkDebuggerHeaderItemWidget(title: 'STATUS'),
-        SizedBox(width: DEFAULT_PADDING + 18)
-      ],
-    );
-  }
-}
-
-class NetworkDebuggerHeaderItemWidget extends StatelessWidget {
-  const NetworkDebuggerHeaderItemWidget({
-    Key? key,
-    required this.title,
-  }) : super(key: key);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-      ),
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../home/overlay_view.dart';
 
-enum FakeDataType { response, error }
+enum FakeDataType { response, error, onlyRequest }
 
 class MeliorDioInterceptors extends Interceptor {
   @override
@@ -76,6 +76,8 @@ class MeliorDioInterceptors extends Interceptor {
                   requestOptions: requestOptions,
                   message: 'DioError',
                 ));
+            break;
+          case FakeDataType.onlyRequest:
             break;
         }
       });

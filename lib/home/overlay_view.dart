@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_in_app_debugger/networks/models/models.dart';
 
 import '../networks/inspector_view.dart';
-import '../networks/models/network_event.dart';
 
 class FlutterInAppDebuggerView extends StatefulWidget {
   FlutterInAppDebuggerView() : super(key: FlutterInAppDebuggerView.globalKey);
@@ -55,7 +55,14 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   }
 
   NetworkEvent addNetworkRequest({required RequestOptions request}) {
-    final networkEvent = NetworkEvent(request: request);
+    final networkEvent = NetworkEvent(
+        request: NetworkRequest(
+      baseUrl: request.baseUrl,
+      path: request.path,
+      method: request.method,
+      requestObject: request,
+    ));
+
     _requests.insert(0, networkEvent);
     _requestsStream.add(networkEvent);
     return networkEvent;
@@ -63,13 +70,17 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   NetworkEvent? addNetworkResponse({required Response response}) {
     final networkEventIndex = _requests.indexWhere((element) =>
-        element.request.hashCode == response.requestOptions.hashCode);
+        element.request.requestObject.hashCode ==
+        response.requestOptions.hashCode);
     if (networkEventIndex != -1) {
-      _requests[networkEventIndex].setResponse = response;
+      _requests[networkEventIndex].setResponse = NetworkResponse(
+        response: response,
+        statusCode: response.statusCode ?? 999,
+      );
       _requestsStream.add(_requests[networkEventIndex]);
       return _requests[networkEventIndex];
     } else {
-      debugPrint('not found request');
+      debugPrint('[Flutter In-app Debugger] not found request');
       return null;
     }
   }
@@ -79,11 +90,11 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
         element.request.hashCode == dioError.requestOptions.hashCode);
     if (networkEventIndex != -1) {
       final networkEvent = _requests[networkEventIndex];
-      networkEvent.setError = dioError;
+      networkEvent.setError = NetworkError(error: dioError);
       _requestsStream.add(networkEvent);
       return networkEvent;
     } else {
-      debugPrint('not found request');
+      debugPrint('[Flutter In-app Debugger] not found request');
       return null;
     }
   }

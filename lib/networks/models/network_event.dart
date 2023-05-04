@@ -1,31 +1,33 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-class NetworkEvent {
+import 'models.dart';
+
+class NetworkEvent<R, T> {
   NetworkEvent({
     required this.request,
-    Response? response,
-    DioError? error,
+    NetworkResponse<T>? response,
+    NetworkError<T>? error,
   })  : requestTime = DateTime.now(),
         _response = response,
+        _error = error,
         _responseTime =
             response != null || error != null ? DateTime.now() : null;
 
-  final RequestOptions request;
+  final NetworkRequest<R> request;
   final DateTime requestTime;
   DateTime? _responseTime;
   DateTime? get responseTime => _responseTime;
 
-  Response? _response;
-  Response? get response => _response;
-  set setResponse(Response response) {
+  NetworkResponse<T>? _response;
+  NetworkResponse<T>? get response => _response;
+  set setResponse(NetworkResponse<T> response) {
     _response = response;
     _responseTime = DateTime.now();
   }
 
-  DioError? _error;
-  DioError? get error => _error;
-  set setError(DioError error) {
+  NetworkError<T>? _error;
+  NetworkError<T>? get error => _error;
+  set setError(NetworkError<T> error) {
     _error = error;
     _responseTime = DateTime.now();
   }
@@ -52,14 +54,14 @@ class NetworkEvent {
         }
 
       case NetworkRequestStatus.failed:
-        return 'DioError';
+        return 'Error';
     }
   }
 
   Color get statusTextColor {
     switch (status) {
       case NetworkRequestStatus.running:
-        return Colors.yellow;
+        return Colors.yellow.shade900;
       case NetworkRequestStatus.done:
         if (response?.statusCode == 200) {
           return Colors.green;
@@ -71,5 +73,3 @@ class NetworkEvent {
     }
   }
 }
-
-enum NetworkRequestStatus { running, done, failed }
