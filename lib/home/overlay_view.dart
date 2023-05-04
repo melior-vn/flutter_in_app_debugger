@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/networks/models/models.dart';
-
-import '../networks/inspector_view.dart';
+import 'package:flutter_in_app_debugger/networks/views/network_view.dart';
 
 class FlutterInAppDebuggerView extends StatefulWidget {
   FlutterInAppDebuggerView() : super(key: FlutterInAppDebuggerView.globalKey);
@@ -60,15 +59,18 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     required String path,
     required String method,
     Map<String, dynamic>? data,
+    required InterceptorType type,
   }) {
     final networkEvent = NetworkEvent(
-        request: NetworkRequest(
-      baseUrl: baseUrl,
-      path: path,
-      method: method,
-      requestObject: request,
-      requestData: data,
-    ));
+      type: type,
+      request: NetworkRequest(
+        baseUrl: baseUrl,
+        path: path,
+        method: method,
+        requestObject: request,
+        requestData: data,
+      ),
+    );
 
     _requests.insert(0, networkEvent);
     _requestsStream.add(networkEvent);
@@ -143,7 +145,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SettingScreen(),
+                    builder: (context) => const NetworkView(),
                   ),
                 );
                 await _animationController.forward();

@@ -5,6 +5,7 @@ import 'models.dart';
 class NetworkEvent<R, T> {
   NetworkEvent({
     required this.request,
+    required this.type,
     NetworkResponse<T>? response,
     NetworkError<T>? error,
   })  : requestTime = DateTime.now(),
@@ -14,6 +15,7 @@ class NetworkEvent<R, T> {
             response != null || error != null ? DateTime.now() : null;
 
   final NetworkRequest<R> request;
+  final InterceptorType type;
   final DateTime requestTime;
   DateTime? _responseTime;
   DateTime? get responseTime => _responseTime;

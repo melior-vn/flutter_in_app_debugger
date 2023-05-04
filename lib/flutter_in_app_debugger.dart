@@ -6,6 +6,7 @@
 // https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
 
 import 'flutter_in_app_debugger_platform_interface.dart';
+export 'networks/networks.dart';
 
 class FlutterInAppDebugger {
   Future<String?> getPlatformVersion() {

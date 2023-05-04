@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import '../networks/models/models.dart';
 
 import '../home/overlay_view.dart';
 
@@ -20,6 +21,7 @@ class MeliorDioInterceptors extends Interceptor {
       path: options.path,
       method: options.method,
       data: options.data,
+      type: InterceptorType.dio,
     );
   }
 

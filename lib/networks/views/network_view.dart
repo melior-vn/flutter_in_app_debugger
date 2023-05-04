@@ -1,21 +1,23 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/configs/configs.dart';
 import 'package:flutter_in_app_debugger/home/overlay_view.dart';
+import '../components/text_logo_widget.dart';
+import '../components/network_debugger_header_widget.dart';
+import '../components/network_item_widget.dart';
+import '../models/models.dart';
 
-import 'components/dio_logo_widget.dart';
-import 'components/network_debugger_header_widget.dart';
-import 'components/network_item_widget.dart';
-
-class SettingScreen extends StatefulWidget {
-  const SettingScreen({
+class NetworkView extends StatefulWidget {
+  const NetworkView({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<SettingScreen> createState() => _SettingScreenState();
+  State<NetworkView> createState() => _NetworkViewState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _NetworkViewState extends State<NetworkView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +62,12 @@ class _SettingScreenState extends State<SettingScreen> {
                     } else {
                       return NetworkItemWidget(
                         networkEvent: networkRequest[index - 1],
-                        logo: const DioLogoWidget(),
+                        logo: networkRequest[index - 1].type ==
+                                InterceptorType.dio
+                            ? const TextLogoWidget(text: 'Dio')
+                            : TextLogoWidget(
+                                text: Platform.isAndroid ? 'Android' : 'iOS',
+                              ),
                       );
                     }
                   },
