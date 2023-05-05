@@ -102,7 +102,6 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
         type: stacktrace != null ? LogEventType.error : LogEventType.log);
     _logs.insert(0, logEvent);
     _logsStream.add(logEvent);
-    DartDev.log(message);
     return logEvent;
   }
 
