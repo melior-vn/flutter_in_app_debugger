@@ -7,7 +7,7 @@ import 'package:flutter_in_app_debugger/interceptors/melior_dio_interceptor.dart
 //   FlutterInAppDebuggerView()
 
 void main() {
-  runApp(const MyApp());
+  FlutterInAppDebuggerView.listen(() => runApp(const MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -26,6 +26,12 @@ class _MyAppState extends State<MyApp> {
       numberOfRepetions: 5,
       fakeDataType: FakeDataType.randomResponse,
     );
+    WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
+      print('fake exception');
+      Future.delayed(const Duration(seconds: 3))
+          .then((value) => throw Exception('fake exception'));
+      print('fake exception');
+    });
   }
 
   @override

@@ -22,8 +22,7 @@ class NetworkStatusWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
+          Container(
             height:
                 networkEvent.status == NetworkRequestStatus.running ? 14 : 10,
             width:

@@ -1,14 +1,51 @@
 import 'dart:async';
+import 'dart:developer' as DartDev;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_in_app_debugger/console/models/log_event.dart';
 import 'package:flutter_in_app_debugger/networks/models/models.dart';
 import 'package:flutter_in_app_debugger/networks/views/network_view.dart';
+
+import 'home_view.dart';
 
 class FlutterInAppDebuggerView extends StatefulWidget {
   FlutterInAppDebuggerView() : super(key: FlutterInAppDebuggerView.globalKey);
 
   static GlobalKey<_FlutterInAppDebuggerViewState> globalKey = GlobalKey();
+
+  static Future listen(void Function() body) async {
+    return runZoned(
+      body,
+      zoneSpecification: ZoneSpecification(
+        print: (
+          Zone self,
+          ZoneDelegate parent,
+          Zone zone,
+          String line,
+        ) {
+          FlutterInAppDebuggerView.globalKey.currentState?.addLog(
+            message: line,
+          );
+          parent.print(zone, line);
+        },
+        handleUncaughtError: (
+          Zone self,
+          ZoneDelegate parent,
+          Zone zone,
+          Object error,
+          StackTrace stackTrace,
+        ) {
+          FlutterInAppDebuggerView.globalKey.currentState?.addLog(
+            message: error.toString(),
+            stacktrace: stackTrace.toString(),
+          );
+
+          parent.handleUncaughtError(zone, error, stackTrace);
+        },
+      ),
+    );
+  }
 
   @override
   State<FlutterInAppDebuggerView> createState() =>
@@ -24,9 +61,14 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   Offset? _settingOffset;
   final _requests = <NetworkEvent>[];
   final _requestsStream = StreamController<NetworkEvent>.broadcast();
+  final _logs = <LogEvent>[];
+  final _logsStream = StreamController<LogEvent>.broadcast();
 
   List<NetworkEvent> get requests => _requests;
   StreamController<NetworkEvent> get requestsStream => _requestsStream;
+
+  List<LogEvent> get logs => _logs;
+  StreamController<LogEvent> get logsStream => _logsStream;
 
   @override
   void initState() {
@@ -51,6 +93,17 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   void dispose() {
     _requestsStream.close();
     super.dispose();
+  }
+
+  LogEvent addLog({required String message, String? stacktrace}) {
+    final logEvent = LogEvent(
+        message: message,
+        stackTrace: stacktrace,
+        type: stacktrace != null ? LogEventType.error : LogEventType.log);
+    _logs.insert(0, logEvent);
+    _logsStream.add(logEvent);
+    DartDev.log(message);
+    return logEvent;
   }
 
   NetworkEvent addNetworkRequest({
@@ -146,7 +199,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const NetworkView(),
+                    builder: (context) => const HomeView(),
                   ),
                 );
                 await _animationController.forward();
