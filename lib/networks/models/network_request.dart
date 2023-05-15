@@ -3,6 +3,7 @@ class NetworkRequest<R> {
     required this.baseUrl,
     required this.path,
     required this.method,
+    required this.uri,
     this.requestData,
     required this.requestObject,
   });
@@ -10,6 +11,7 @@ class NetworkRequest<R> {
   final String baseUrl;
   final String path;
   final String method;
+  final Uri uri;
   final Map<String, dynamic>? requestData;
   final R requestObject;
 }

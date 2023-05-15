@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_in_app_debugger/networks/models/network_event.dart';
 import 'package:flutter_json_view/flutter_json_view.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-enum SampleItem { copyRequest, copyResponse, copycURL }
+enum RequestActionType { copyRequest, copyResponse, copycURL }
 
 class RequestDetailView extends StatefulWidget {
   const RequestDetailView({
@@ -45,16 +47,61 @@ class _RequestDetailViewState extends State<RequestDetailView>
           ),
         ),
         actions: [
-          PopupMenuButton<SampleItem>(
+          PopupMenuButton<RequestActionType>(
             icon: const Icon(
               Icons.menu_rounded,
               color: Colors.black,
             ),
-            onSelected: (SampleItem item) {},
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<SampleItem>>[
-              PopupMenuItem<SampleItem>(
-                value: SampleItem.copyRequest,
-                child: Row(children: [
+            onSelected: (RequestActionType item) async {
+              switch (item) {
+                case RequestActionType.copyRequest:
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: (widget.networkEvent.request.requestData ?? {})
+                          .toString(),
+                    ),
+                  );
+                  Fluttertoast.showToast(
+                    msg: 'Copied request to clipboard',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.white70.withOpacity(0.8),
+                    textColor: Colors.black,
+                    fontSize: 14.0,
+                  );
+                  break;
+                case RequestActionType.copyResponse:
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: (widget.networkEvent.response?.responseData ?? {})
+                          .toString(),
+                    ),
+                  );
+                  Fluttertoast.showToast(
+                    msg: 'Copied response to clipboard',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.white70.withOpacity(0.8),
+                    textColor: Colors.black,
+                    fontSize: 14.0,
+                  );
+                  break;
+                case RequestActionType.copycURL:
+//                   var curlString =
+//                       '''curl --location --request ${widget.networkEvent.request.method} ${widget.networkEvent.request.uri.path}
+// --header 'Content-Type: application/json\'''';
+//                   widget.networkEvent.request.requestObject
+//                   print(curlString);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<RequestActionType>>[
+              PopupMenuItem<RequestActionType>(
+                value: RequestActionType.copyRequest,
+                child: Row(children: const [
                   Icon(
                     Icons.upload_rounded,
                     color: Colors.black,
@@ -63,9 +110,9 @@ class _RequestDetailViewState extends State<RequestDetailView>
                   Text('Copy request')
                 ]),
               ),
-              PopupMenuItem<SampleItem>(
-                value: SampleItem.copyResponse,
-                child: Row(children: [
+              PopupMenuItem<RequestActionType>(
+                value: RequestActionType.copyResponse,
+                child: Row(children: const [
                   Icon(
                     Icons.download_rounded,
                     color: Colors.black,
@@ -74,8 +121,8 @@ class _RequestDetailViewState extends State<RequestDetailView>
                   Text('Copy response')
                 ]),
               ),
-              PopupMenuItem<SampleItem>(
-                value: SampleItem.copycURL,
+              PopupMenuItem<RequestActionType>(
+                value: RequestActionType.copycURL,
                 child: Row(children: [
                   SvgPicture.asset(
                     'assets/postman_logo.svg',
@@ -83,8 +130,8 @@ class _RequestDetailViewState extends State<RequestDetailView>
                     width: 24,
                     height: 24,
                   ),
-                  SizedBox(width: 8),
-                  Text('Copy cURL')
+                  const SizedBox(width: 8),
+                  const Text('Copy cURL')
                 ]),
               ),
             ],

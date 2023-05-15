@@ -22,6 +22,7 @@ class MeliorDioInterceptors extends Interceptor {
       path: options.path,
       method: options.method,
       data: options.data,
+      uri: options.uri,
       type: InterceptorType.dio,
     );
   }
@@ -69,6 +70,7 @@ class MeliorDioInterceptors extends Interceptor {
       final requestOptions = RequestOptions(
         path: 'fakePath/fakePath/$currentNumberOfRepetions',
         method: 'POST',
+        baseUrl: 'fake.com/endpoint',
         data: {'key': 'value'},
       );
       _onRequest(requestOptions);

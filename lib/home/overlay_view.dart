@@ -113,6 +113,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     required String baseUrl,
     required String path,
     required String method,
+    required Uri uri,
     Map<String, dynamic>? data,
     required InterceptorType type,
   }) {
@@ -121,6 +122,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
       request: NetworkRequest(
         baseUrl: baseUrl,
         path: path,
+        uri: uri,
         method: method,
         requestObject: request,
         requestData: data,
