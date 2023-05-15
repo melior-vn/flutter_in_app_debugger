@@ -65,9 +65,12 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   final _logsStream = StreamController<LogEvent>.broadcast();
 
   List<NetworkEvent> get requests => _requests;
+  void removeAllRequests() => _requests.removeWhere((element) => true);
+
   StreamController<NetworkEvent> get requestsStream => _requestsStream;
 
   List<LogEvent> get logs => _logs;
+  void removeAllLogs() => _logs.removeWhere((element) => true);
   StreamController<LogEvent> get logsStream => _logsStream;
 
   @override

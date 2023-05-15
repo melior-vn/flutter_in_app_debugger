@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/networks/models/network_event.dart';
 import 'package:flutter_json_view/flutter_json_view.dart';
+import 'package:flutter_svg/svg.dart';
+
+enum SampleItem { copyRequest, copyResponse, copycURL }
 
 class RequestDetailView extends StatefulWidget {
   const RequestDetailView({
@@ -41,6 +44,52 @@ class _RequestDetailViewState extends State<RequestDetailView>
             color: Colors.black,
           ),
         ),
+        actions: [
+          PopupMenuButton<SampleItem>(
+            icon: const Icon(
+              Icons.menu_rounded,
+              color: Colors.black,
+            ),
+            onSelected: (SampleItem item) {},
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<SampleItem>>[
+              PopupMenuItem<SampleItem>(
+                value: SampleItem.copyRequest,
+                child: Row(children: [
+                  Icon(
+                    Icons.upload_rounded,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Copy request')
+                ]),
+              ),
+              PopupMenuItem<SampleItem>(
+                value: SampleItem.copyResponse,
+                child: Row(children: [
+                  Icon(
+                    Icons.download_rounded,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Copy response')
+                ]),
+              ),
+              PopupMenuItem<SampleItem>(
+                value: SampleItem.copycURL,
+                child: Row(children: [
+                  SvgPicture.asset(
+                    'assets/postman_logo.svg',
+                    package: 'flutter_in_app_debugger',
+                    width: 24,
+                    height: 24,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Copy cURL')
+                ]),
+              ),
+            ],
+          ),
+        ],
         titleSpacing: 0,
         backgroundColor: Colors.white,
         elevation: 0,

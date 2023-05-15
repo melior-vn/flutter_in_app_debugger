@@ -3,9 +3,14 @@ import 'package:flutter_in_app_debugger/configs/configs.dart';
 import 'package:flutter_in_app_debugger/home/overlay_view.dart';
 import 'package:intl/intl.dart';
 
-class ConsoleView extends StatelessWidget {
+class ConsoleView extends StatefulWidget {
   const ConsoleView({Key? key}) : super(key: key);
 
+  @override
+  State<ConsoleView> createState() => _ConsoleViewState();
+}
+
+class _ConsoleViewState extends State<ConsoleView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,6 +28,18 @@ class ConsoleView extends StatelessWidget {
             color: Colors.black,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              FlutterInAppDebuggerView.globalKey.currentState?.removeAllLogs();
+              if (mounted) setState(() {});
+            },
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.black,
+            ),
+          )
+        ],
         titleSpacing: 0,
         backgroundColor: Colors.white,
         elevation: 0,

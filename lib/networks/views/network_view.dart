@@ -35,6 +35,19 @@ class _NetworkViewState extends State<NetworkView> {
             color: Colors.black,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              FlutterInAppDebuggerView.globalKey.currentState
+                  ?.removeAllRequests();
+              if (mounted) setState(() {});
+            },
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.black,
+            ),
+          )
+        ],
         titleSpacing: 0,
         backgroundColor: Colors.white,
         elevation: 0,
