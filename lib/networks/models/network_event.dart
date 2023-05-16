@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import 'models.dart';
@@ -73,5 +74,30 @@ class NetworkEvent<R, T> {
       case NetworkRequestStatus.failed:
         return Colors.red;
     }
+  }
+
+  String get getcURL {
+    switch (type) {
+      case InterceptorType.dio:
+        return cURLFromDio(request.requestObject as RequestOptions);
+      default:
+        return 'Not supported package';
+    }
+  }
+
+  String cURLFromDio(RequestOptions requestOptions) {
+    var curlString =
+        '''curl -X ${requestOptions.method} ${requestOptions.uri.path}''';
+
+    requestOptions.headers.forEach((name, values) {
+      curlString += ' -H "$name: $values"';
+    });
+
+    if (requestOptions.method != 'GET' && requestOptions.data != null) {
+      curlString += ' -d \'${requestOptions.data}\'';
+    }
+
+    debugPrint(curlString);
+    return curlString;
   }
 }

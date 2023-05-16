@@ -89,11 +89,18 @@ class _RequestDetailViewState extends State<RequestDetailView>
                   );
                   break;
                 case RequestActionType.copycURL:
-//                   var curlString =
-//                       '''curl --location --request ${widget.networkEvent.request.method} ${widget.networkEvent.request.uri.path}
-// --header 'Content-Type: application/json\'''';
-//                   widget.networkEvent.request.requestObject
-//                   print(curlString);
+                  await Clipboard.setData(
+                    ClipboardData(text: widget.networkEvent.getcURL),
+                  );
+                  Fluttertoast.showToast(
+                    msg: 'Copied cURL to clipboard',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.white70.withOpacity(0.8),
+                    textColor: Colors.black,
+                    fontSize: 14.0,
+                  );
                   break;
               }
             },
