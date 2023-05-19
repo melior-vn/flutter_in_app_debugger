@@ -3,6 +3,7 @@ import 'dart:developer' as DartDev;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_in_app_debugger/console/models/log_event.dart';
 import 'package:flutter_in_app_debugger/networks/models/models.dart';
 import 'package:flutter_in_app_debugger/networks/views/network_view.dart';
@@ -54,15 +55,38 @@ class FlutterInAppDebuggerView extends StatefulWidget {
 
 class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
+  late AnimationController _movingAnimationController;
+  late Animation<Offset> _movingAnimation;
   late OverlayEntry _overlayEntry;
   final _settingIconSize = 40.0;
-  Offset? _settingOffset;
+  // Current offset
+  Offset? _inAppIconOffset;
+  // Last offset for calculate end point
+  Offset? _lastInAppIconOffset;
+  // Set both _inAppIconOffset and _lastInAppIconOffset
+  void _setInAppIconOffset(Offset newOffset) {
+    _lastInAppIconOffset = _inAppIconOffset ?? newOffset;
+    _inAppIconOffset = newOffset;
+    if (mounted) {
+      _endPointInAppIconOffset = _calculateEndPointInAppIconOffset(
+        _inAppIconOffset!,
+        _lastInAppIconOffset!,
+        MediaQuery.of(context).size.width,
+        MediaQuery.of(context).size.height,
+      );
+    }
+  }
+
+  // End point when end drag offset
+  Offset? _endPointInAppIconOffset;
+
   final _requests = <NetworkEvent>[];
   final _requestsStream = StreamController<NetworkEvent>.broadcast();
   final _logs = <LogEvent>[];
   final _logsStream = StreamController<LogEvent>.broadcast();
+
+  var _verticalVelocity = 0.0;
+  var _horizontalVelocity = 0.0;
 
   List<NetworkEvent> get requests => _requests;
   void removeAllRequests() => _requests.removeWhere((element) => true);
@@ -76,24 +100,22 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   @override
   void initState() {
     super.initState();
-    _animationController =
+    _movingAnimationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
 
-    _animation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(
-          0.2,
-          1.0,
-          curve: Curves.ease,
-        )));
-
     WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
-      _showOverLay();
+      _initOverLay();
     });
   }
 
   @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+
+  @override
   void dispose() {
+    _movingAnimationController.dispose();
     _requestsStream.close();
     super.dispose();
   }
@@ -171,67 +193,96 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     }
   }
 
-  void _showOverLay() async {
+  void _initOverLay() async {
     final viewInsert = MediaQuery.of(context).padding;
-    _settingOffset = Offset(
+    _setInAppIconOffset(Offset(
       viewInsert.left + 46,
       viewInsert.top +
           46 +
           MediaQuery.of(context).viewPadding.top +
           MediaQuery.of(context).viewInsets.top,
-    );
+    ));
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: _settingIconSize,
         height: _settingIconSize,
-        top: _settingOffset?.dy,
-        left: _settingOffset?.dx,
-        child: ScaleTransition(
-          scale: _animation,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              _settingOffset = Offset(
-                (_settingOffset?.dx ?? 0) + details.delta.dx,
-                (_settingOffset?.dy ?? 0) + details.delta.dy,
-              );
-              overlayState?.setState(() {});
-            },
-            child: FloatingActionButton(
-              onPressed: () async {
-                _overlayEntry.remove();
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HomeView(),
-                  ),
-                );
-                await _animationController.forward();
-                overlayState?.insert(_overlayEntry);
-              },
-              backgroundColor: Colors.grey,
-              mini: true,
-              child: const Icon(
-                Icons.settings,
-              ),
+        top: _inAppIconOffset?.dy,
+        left: _inAppIconOffset?.dx,
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            _setInAppIconOffset(Offset(
+              (_inAppIconOffset?.dx ?? 0) + details.delta.dx,
+              (_inAppIconOffset?.dy ?? 0) + details.delta.dy,
+            ));
+            overlayState?.setState(() {});
+          },
+          onPanEnd: (details) {
+            setState(() {
+              _horizontalVelocity =
+                  details.velocity.pixelsPerSecond.dx.abs().floorToDouble();
+              _verticalVelocity =
+                  details.velocity.pixelsPerSecond.dy.abs().floorToDouble();
+            });
+          },
+          child: FloatingActionButton(
+            onPressed: _onPressed,
+            backgroundColor: Colors.grey,
+            mini: true,
+            child: const Icon(
+              Icons.settings,
             ),
           ),
         ),
       ),
     );
-    _animationController.addListener(() {
-      overlayState?.setState(() {});
-    });
-    await _animationController.forward();
-    overlayState?.insert(_overlayEntry);
 
-    // await Future.delayed(const Duration(seconds: 5))
-    //     .whenComplete(() => animationController!.reverse())
-    //     .whenComplete(() => overlayEntry!.remove());
+    _addOverlay();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
+  void _onPressed() async {
+    _removeOverlay();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomeView(),
+      ),
+    );
+    _addOverlay();
+  }
+
+  void _addOverlay() {
+    Overlay.of(context)?.insert(_overlayEntry);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry.remove();
+  }
+
+  Offset? _calculateEndPointInAppIconOffset(
+    Offset inAppIconOffset,
+    Offset lastInAppIconOffset,
+    double width,
+    double height,
+  ) {
+    // 1. vector pháp tuyến
+    // 1.1. (a, b) = (x1 - x2, y1 - y2)
+
+    // 2. phương trình đường thẳng
+    // 2.1. a*(x - x1) + b*(y - y1) = 0
+    // 2.2. => a*x + b*y - (a*x1 + b*y1) = 0
+    // 2.3. => y = ((a*x1 + b*y1) - a*x) / b
+    // 2.4.   x = ((a*x1 + b*y1) - b*y) / a
+
+    // 3. 4 điểm cắt tương ứng 4 đường của cạnh màn hình
+    // 3.1. case x = 0
+    // 3.2. case y = 0
+    // 3.3. case x = width
+    // 3.4. case y = height
+    // NOTE*: Cần check song song
+    final normalVector = Offset(
+      inAppIconOffset.dx - lastInAppIconOffset.dx,
+      inAppIconOffset.dy - inAppIconOffset.dy,
+    );
   }
 }
