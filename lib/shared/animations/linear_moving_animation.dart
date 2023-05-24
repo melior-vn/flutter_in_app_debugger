@@ -37,13 +37,21 @@ class LinearMovingAnimationMixin {
     // 3. 4 điểm cắt tương ứng 4 đường của cạnh màn hình
     final allIntersectionPoints = <Offset>[];
     if (isParallelToDx) {
-      final leftPoint = Offset(endPoint.dx, 0);
-      final rightPoint = Offset(endPoint.dx, height);
-      allIntersectionPoints.addAll([leftPoint, rightPoint]);
+      late Offset point;
+      if (endPoint.dy > startPoint.dy) {
+        point = Offset(endPoint.dx, height);
+      } else {
+        point = Offset(endPoint.dx, 0);
+      }
+      allIntersectionPoints.addAll([point]);
     } else if (isParallelToDy) {
-      final topPoint = Offset(0, endPoint.dy);
-      final bottomPoint = Offset(width, endPoint.dy);
-      allIntersectionPoints.addAll([topPoint, bottomPoint]);
+      late Offset point;
+      if (endPoint.dx > startPoint.dx) {
+        point = Offset(width, endPoint.dy);
+      } else {
+        point = Offset(0, endPoint.dy);
+      }
+      allIntersectionPoints.addAll([point]);
     } else {
       // 3.1. case x = 0
       final topPoint = Offset(
@@ -112,7 +120,14 @@ class LinearMovingAnimationMixin {
     Offset? intersectionPoint;
     if (distinctIntersectionPointsInScreen.length == 2) {
       final firstPoint = distinctIntersectionPointsInScreen[0];
-      if ((firstPoint.dx - startPoint.dx) / normalVector.dx > 0) {
+
+      print(distinctIntersectionPointsInScreen);
+      print(normalVector);
+      print(distinctIntersectionPointsInScreen[0] - startPoint);
+      print(((firstPoint.dx - startPoint.dx) / normalVector.dx));
+      print((firstPoint.dy - startPoint.dy) / normalVector.dy);
+      if (((firstPoint.dx - startPoint.dx) / normalVector.dx) > 0 &&
+          ((firstPoint.dy - startPoint.dy) / normalVector.dy) > 0) {
         intersectionPoint = distinctIntersectionPointsInScreen[0];
       } else {
         intersectionPoint = distinctIntersectionPointsInScreen[1];

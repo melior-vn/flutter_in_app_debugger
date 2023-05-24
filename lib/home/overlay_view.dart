@@ -64,22 +64,25 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   // Current offset
   Offset? _inAppIconOffset;
+  // Normalize the position of current offset
+  Offset? _normalizedInAppIconOffset;
   // Last offset for calculate end point
   final _historyInAppIconOffset = <Offset>[];
   // Set both _inAppIconOffset and _lastInAppIconOffset
   void _setInAppIconOffset(Offset newOffset) {
     _historyInAppIconOffset.add(newOffset);
     _inAppIconOffset = newOffset;
+    _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(newOffset);
   }
 
   Offset? _calculateInAppIconEndpoint() {
     late Offset _lastInAppIconPoint;
 
-    if (_historyInAppIconOffset.length < 10) {
+    if (_historyInAppIconOffset.length < 12) {
       _lastInAppIconPoint = _historyInAppIconOffset.first;
     } else {
       _lastInAppIconPoint =
-          _historyInAppIconOffset[_historyInAppIconOffset.length - 10];
+          _historyInAppIconOffset[_historyInAppIconOffset.length - 12];
     }
     _startPointOffset = _lastInAppIconPoint;
 
@@ -136,6 +139,8 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     _movingAnimationController.addListener(() {
       Overlay.of(context).setState(() {
         _inAppIconOffset = _movingAnimation.value;
+        _normalizedInAppIconOffset =
+            _getNormalizedInAppIconOffset(_movingAnimation.value);
       });
     });
 
@@ -176,7 +181,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
             child: Container(
               width: 40,
               height: 40,
-              color: Colors.green,
+              color: Colors.red,
             ),
           ),
         if (_inAppIconOffset != null)
@@ -284,8 +289,8 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: _inAppIconOffset?.dy,
-        left: _inAppIconOffset?.dx,
+        top: _normalizedInAppIconOffset?.dy,
+        left: _normalizedInAppIconOffset?.dx,
         child: GestureDetector(
           onPanUpdate: (details) {
             _movingAnimationController.stop();
@@ -294,10 +299,8 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
               (_inAppIconOffset?.dy ?? 0) + details.delta.dy,
             ));
             _endPointInAppIconOffset = _calculateInAppIconEndpoint();
-            print(_endPointInAppIconOffset);
-
-            setState(() {});
             overlayState?.setState(() {});
+            setState(() {});
           },
           onPanEnd: (details) {
             _horizontalVelocity =
@@ -308,6 +311,7 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
               _inAppIconOffset!,
               _endPointInAppIconOffset!,
             );
+            _historyInAppIconOffset.clear();
           },
           // child: FloatingActionButton(
           //   onPressed: _onPressed,
@@ -346,5 +350,18 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   void _removeOverlay() {
     _overlayEntry.remove();
+  }
+
+  Offset _getNormalizedInAppIconOffset(Offset inAppIconOffset) {
+    return Offset(
+      min(
+        inAppIconOffset.dx,
+        MediaQuery.of(context).size.width - _settingIconSize,
+      ),
+      min(
+        inAppIconOffset.dy,
+        MediaQuery.of(context).size.height - _settingIconSize,
+      ),
+    );
   }
 }
