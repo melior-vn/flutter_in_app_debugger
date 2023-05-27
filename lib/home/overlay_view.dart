@@ -69,9 +69,11 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   // Last offset for calculate end point
   final _historyInAppIconOffset = <Offset>[];
   // Set both _inAppIconOffset and _lastInAppIconOffset
+  // If offset < 0 => update => 0;
   void _setInAppIconOffset(Offset newOffset) {
-    _historyInAppIconOffset.add(newOffset);
-    _inAppIconOffset = newOffset;
+    final validatedOffset = _validateOffset(newOffset);
+    _historyInAppIconOffset.add(validatedOffset);
+    _inAppIconOffset = validatedOffset;
     _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(newOffset);
   }
 
@@ -353,15 +355,23 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   }
 
   Offset _getNormalizedInAppIconOffset(Offset inAppIconOffset) {
+    final validatedOffset = _validateOffset(inAppIconOffset);
     return Offset(
       min(
-        inAppIconOffset.dx,
+        validatedOffset.dx,
         MediaQuery.of(context).size.width - _settingIconSize,
       ),
       min(
-        inAppIconOffset.dy,
+        validatedOffset.dy,
         MediaQuery.of(context).size.height - _settingIconSize,
       ),
     );
+  }
+
+  Offset _validateOffset(Offset newOffset) {
+    final maxWidth = MediaQuery.of(context).size.width;
+    final maxHeight = MediaQuery.of(context).size.height;
+    return Offset(max(0, min(maxWidth, newOffset.dx)),
+        max(0, min(maxHeight, newOffset.dy)));
   }
 }

@@ -121,8 +121,10 @@ class LinearMovingAnimationMixin {
     if (distinctIntersectionPointsInScreen.length == 2) {
       final firstPoint = distinctIntersectionPointsInScreen[0];
 
+      print('======');
       print(distinctIntersectionPointsInScreen);
       print(normalVector);
+      print(startPoint);
       print(distinctIntersectionPointsInScreen[0] - startPoint);
       print(((firstPoint.dx - startPoint.dx) / normalVector.dx));
       print((firstPoint.dy - startPoint.dy) / normalVector.dy);
