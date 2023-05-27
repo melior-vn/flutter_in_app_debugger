@@ -96,15 +96,38 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
     );
   }
 
-  void _runMovingAnimation(Offset startOffset, Offset endOffset) {
+  void _runMovingAnimation(
+    Offset startOffset,
+    Offset endOffset,
+    Offset pixelsPerSecond,
+    Size size,
+  ) {
     _movingAnimation = _movingAnimationController.drive(
       Tween<Offset>(
         begin: startOffset,
         end: endOffset,
       ),
     );
-    _movingAnimationController.reset();
-    _movingAnimationController.forward();
+
+    final maxWidth = MediaQuery.of(context).size.width;
+    final maxHeight = MediaQuery.of(context).size.height;
+
+    // Calculate the velocity relative to the unit interval, [0,1],
+    // used by the animation controller.
+    final unitsPerSecondX = pixelsPerSecond.dx / maxWidth;
+    final unitsPerSecondY = pixelsPerSecond.dy / maxHeight;
+    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
+    final unitVelocity = unitsPerSecond.distance;
+
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
+
+    final simulation = SpringSimulation(spring, 0, 1, unitVelocity);
+
+    _movingAnimationController.animateWith(simulation);
   }
 
   // End point when end drag offset
@@ -312,6 +335,11 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
             _runMovingAnimation(
               _inAppIconOffset!,
               _endPointInAppIconOffset!,
+              details.velocity.pixelsPerSecond,
+              Size(
+                _settingIconSize,
+                _settingIconSize,
+              ),
             );
             _historyInAppIconOffset.clear();
           },
