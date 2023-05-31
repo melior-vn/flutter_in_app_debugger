@@ -12,6 +12,8 @@ class FlutterInAppDebuggerOverlayMixin {
   late AnimationController _movingAnimationController;
 
   late Animation<Offset> _movingAnimation;
+
+  late BuildContext _context;
   // Current offset
   Offset? _inAppIconOffset;
   // Normalize the position of current offset
@@ -27,6 +29,7 @@ class FlutterInAppDebuggerOverlayMixin {
     required double iconSize,
     required TickerProvider vsync,
   }) {
+    _context = context;
     _settingIconSize = iconSize;
     _movingAnimationController = AnimationController(
       vsync: vsync,
@@ -65,13 +68,11 @@ class FlutterInAppDebuggerOverlayMixin {
     double iconSize = 40.0,
     required AnimationController movingAnimationController,
   }) async {
-    final viewInsert = MediaQuery.of(context).padding;
+    final viewInsert = MediaQueryData.fromView(View.of(context)).padding;
     _setInAppIconOffset(
       Offset(
         viewInsert.left,
-        viewInsert.top +
-            MediaQuery.of(context).viewPadding.top +
-            MediaQuery.of(context).viewInsets.top,
+        viewInsert.top,
       ),
       maxHeight: MediaQuery.of(context).size.height,
       maxWidth: MediaQuery.of(context).size.width,
@@ -145,19 +146,22 @@ class FlutterInAppDebuggerOverlayMixin {
     required double maxHeight,
     required double iconSize,
   }) {
+    final viewInsert = MediaQueryData.fromView(View.of(_context)).padding;
     final validatedOffset = _validateOffset(
       newOffset: inAppIconOffset,
-      maxWidth: maxWidth,
-      maxHeight: maxHeight,
+      minWidth: viewInsert.right,
+      minHeight: viewInsert.top,
+      maxWidth: maxWidth - viewInsert.right,
+      maxHeight: maxHeight - viewInsert.bottom,
     );
     return Offset(
       min(
         validatedOffset.dx,
-        maxWidth - iconSize,
+        maxWidth - iconSize - viewInsert.right,
       ),
       min(
         validatedOffset.dy,
-        maxHeight - iconSize,
+        maxHeight - iconSize - viewInsert.bottom,
       ),
     );
   }
