@@ -71,26 +71,25 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   @override
   void initState() {
     super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    initFlutterInAppOverlay(
-      context,
-      iconSize: max(MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height) *
-          0.08,
-      vsync: this,
-    );
-    super.didChangeDependencies();
+    WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
+      initFlutterInAppOverlay(
+        context,
+        iconSize: max(MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height) *
+            0.08,
+        vsync: this,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constrants) {
-      return const Stack(children: [
-        SizedBox.shrink(),
-      ]);
+      return Stack(
+        children: [
+          SizedBox.shrink(),
+        ],
+      );
     });
   }
 

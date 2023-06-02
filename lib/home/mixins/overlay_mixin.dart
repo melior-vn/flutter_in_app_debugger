@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter_in_app_debugger/shared/animations/linear_moving_animation.dart';
+
+import '../home_view.dart';
 
 class FlutterInAppDebuggerOverlayMixin {
   late OverlayEntry _overlayEntry;
@@ -68,7 +71,7 @@ class FlutterInAppDebuggerOverlayMixin {
     double iconSize = 40.0,
     required AnimationController movingAnimationController,
   }) async {
-    final viewInsert = MediaQueryData.fromView(View.of(context)).padding;
+    final viewInsert = MediaQueryData.fromWindow(window).padding;
     _setInAppIconOffset(
       Offset(
         viewInsert.left,
@@ -84,6 +87,7 @@ class FlutterInAppDebuggerOverlayMixin {
         top: _normalizedInAppIconOffset?.dy,
         left: _normalizedInAppIconOffset?.dx,
         child: GestureDetector(
+          onTap: () => _onPressed(),
           onPanUpdate: (details) {
             movingAnimationController.stop();
             _setInAppIconOffset(
@@ -112,14 +116,6 @@ class FlutterInAppDebuggerOverlayMixin {
             );
             _historyInAppIconOffset.clear();
           },
-          // child: FloatingActionButton(
-          //   onPressed: _onPressed,
-          //   backgroundColor: Colors.grey,
-          //   mini: true,
-          //   child: const Icon(
-          //     Icons.settings,
-          //   ),
-          // ),
           child: Container(
             width: iconSize,
             height: iconSize,
@@ -136,6 +132,19 @@ class FlutterInAppDebuggerOverlayMixin {
     Overlay.of(context)?.insert(_overlayEntry);
   }
 
+  void _onPressed() async {
+    _removeOverlay();
+
+    await Navigator.push(
+      _context,
+      MaterialPageRoute(
+        builder: (context) => const HomeView(),
+      ),
+    );
+    print('add over lay');
+    _addOverlay(_context);
+  }
+
   void _removeOverlay() {
     _overlayEntry.remove();
   }
@@ -146,7 +155,7 @@ class FlutterInAppDebuggerOverlayMixin {
     required double maxHeight,
     required double iconSize,
   }) {
-    final viewInsert = MediaQueryData.fromView(View.of(_context)).padding;
+    final viewInsert = MediaQueryData.fromWindow(window).padding;
     final validatedOffset = _validateOffset(
       newOffset: inAppIconOffset,
       minWidth: viewInsert.right,
