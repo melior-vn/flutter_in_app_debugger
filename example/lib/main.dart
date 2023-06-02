@@ -47,7 +47,10 @@ class _MyAppState extends State<MyApp> {
             const Center(
               child: Text('Running on: something\n'),
             ),
-            FlutterInAppDebuggerView()
+            FlutterInAppDebuggerView(
+              hasRemoteServer: false,
+              hostRemoteServer: "http://localhost:8000",
+            )
           ],
         ),
       ),

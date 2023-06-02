@@ -16,6 +16,7 @@ dependencies:
   plugin_platform_interface: ^2.0.2
   flutter_svg: ^1.0.3
   fluttertoast: ^8.2.1
+  device_info_plus: ^4.0.0
 
 dev_dependencies:
   flutter_test:

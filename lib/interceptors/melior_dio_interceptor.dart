@@ -90,6 +90,12 @@ class MeliorDioInterceptors extends Interceptor {
           case FakeDataType.error:
             _onError(fakeError ??
                 DioError(
+                  response: Response(
+                    requestOptions: requestOptions,
+                    statusCode: 400,
+                    statusMessage: 'Bad Request',
+                    data: {'key': 'value'},
+                  ),
                   requestOptions: requestOptions,
                 ));
             break;
@@ -108,6 +114,12 @@ class MeliorDioInterceptors extends Interceptor {
             } else {
               _onError(fakeError ??
                   DioError(
+                    response: Response(
+                      requestOptions: requestOptions,
+                      statusCode: 400,
+                      statusMessage: 'Bad Request',
+                      data: {'key': 'value'},
+                    ),
                     requestOptions: requestOptions,
                   ));
             }
