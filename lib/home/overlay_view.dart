@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_debugger/console/models/log_event.dart';
 import 'package:flutter_in_app_debugger/networks/models/models.dart';
-import 'package:flutter_in_app_debugger/shared/animations/linear_moving_animation.dart';
 
 import 'mixins/overlay_mixin.dart';
 
