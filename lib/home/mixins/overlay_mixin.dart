@@ -15,7 +15,7 @@ class FlutterInAppDebuggerOverlayMixin {
 
   late double _settingIconSize;
 
-  final _showingFunctionsSize = 120.0;
+  final _showingFunctionsSize = 180.0;
 
   var _currentIconSize = 0.0;
 
@@ -82,20 +82,44 @@ class FlutterInAppDebuggerOverlayMixin {
 
     _createChangingSizeAnimation(
       animationController: _sizeAnimationController,
-      startSize: _settingIconSize,
+      startSize: _currentIconSize,
       endSize: _showingFunctionsSize,
     );
 
     _sizeAnimationController.addListener(() {
       Overlay.of(context)?.setState(() {
+        // if delta > 0 => need update _normalizedInAppIconOffset to keep on size
+        final deltaChange = _currentIconSize - _sizeAnimation.value;
+        late Offset newOffset;
+        print(_normalizedInAppIconOffset);
+        print(_normalizedInAppIconOffset!.dx);
+
+        print(_normalizedInAppIconOffset!.dx ==
+            _getNormalizedInAppIconOffsetMinWidth());
+        print('deltaChange: $deltaChange');
+        final isOnSideHorizontal = (_normalizedInAppIconOffset!.dx -
+                    _getNormalizedInAppIconOffsetMinWidth())
+                .abs() <
+            1;
+        if (deltaChange >= 0) {
+          newOffset = Offset(
+              isOnSideHorizontal
+                  ? _getNormalizedInAppIconOffsetMinWidth()
+                  : _normalizedInAppIconOffset!.dx + deltaChange,
+              _normalizedInAppIconOffset!.dy);
+        } else {
+          newOffset = _normalizedInAppIconOffset!;
+        }
+        print('newOffset: $newOffset');
         _currentIconSize = _sizeAnimation.value;
         if (_normalizedInAppIconOffset != null) {
           _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(
-            _normalizedInAppIconOffset!,
+            newOffset,
             maxHeight: MediaQuery.of(context).size.height,
             maxWidth: MediaQuery.of(context).size.width,
-            iconSize: _settingIconSize,
+            iconSize: _currentIconSize,
           );
+          print('after change: $_normalizedInAppIconOffset');
         }
       });
       print(_currentIconSize);
