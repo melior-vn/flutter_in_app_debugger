@@ -3,23 +3,37 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
-import 'package:flutter_svg/svg.dart';
 import '../../shared/math/linear_moving.dart';
 
+import '../enums.dart';
 import '../home_view.dart';
-
-enum ScreenEdge { left, right, top, bottom }
+import '../models/in_app_icon_endpoint.dart';
+import '../views/in_app_debugger_icon.dart';
 
 class FlutterInAppDebuggerOverlayMixin {
   late OverlayEntry _overlayEntry;
 
   late double _settingIconSize;
 
+  final _showingFunctionsSize = 120.0;
+
+  var _currentIconSize = 0.0;
+
   late AnimationController _movingAnimationController;
 
   late Animation<Offset> _movingAnimation;
 
+  late AnimationController _sizeAnimationController;
+  late Animation<double> _sizeAnimation;
+
   late BuildContext _context;
+
+  bool _isShowingFunctions = false;
+  void setIsShowingFunctions(bool newValue) {
+    _isShowingFunctions = newValue;
+    Overlay.of(_context)?.setState(() {});
+  }
+
   // Current offset
   Offset? _inAppIconOffset;
   ScreenEdge? _currentEdge;
@@ -39,6 +53,7 @@ class FlutterInAppDebuggerOverlayMixin {
   }) {
     _context = context;
     _settingIconSize = iconSize;
+    _currentIconSize = iconSize;
     _movingAnimationController = AnimationController(
       vsync: vsync,
       duration: const Duration(
@@ -58,6 +73,34 @@ class FlutterInAppDebuggerOverlayMixin {
       });
     });
 
+    _sizeAnimationController = AnimationController(
+      vsync: vsync,
+      duration: const Duration(
+        milliseconds: 100,
+      ),
+    );
+
+    _createChangingSizeAnimation(
+      animationController: _sizeAnimationController,
+      startSize: _settingIconSize,
+      endSize: _showingFunctionsSize,
+    );
+
+    _sizeAnimationController.addListener(() {
+      Overlay.of(context)?.setState(() {
+        _currentIconSize = _sizeAnimation.value;
+        if (_normalizedInAppIconOffset != null) {
+          _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(
+            _normalizedInAppIconOffset!,
+            maxHeight: MediaQuery.of(context).size.height,
+            maxWidth: MediaQuery.of(context).size.width,
+            iconSize: _settingIconSize,
+          );
+        }
+      });
+      print(_currentIconSize);
+    });
+
     WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
       _createOverLay(
         context,
@@ -69,6 +112,7 @@ class FlutterInAppDebuggerOverlayMixin {
 
   void disposeFlutterInAppOverlay() {
     _movingAnimationController.dispose();
+    _sizeAnimationController.dispose();
   }
 
   void _createOverLay(
@@ -93,124 +137,66 @@ class FlutterInAppDebuggerOverlayMixin {
         top: _normalizedInAppIconOffset?.dy,
         left: _normalizedInAppIconOffset?.dx,
         child: GestureDetector(
-          onTap: () => _onPressed(),
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            _sizeAnimationController.stop();
+            setIsShowingFunctions(!_isShowingFunctions);
+            if (_isShowingFunctions) {
+              _sizeAnimationController.forward();
+            } else {
+              _sizeAnimationController.reverse();
+            }
+          },
           onPanUpdate: (details) {
-            movingAnimationController.stop();
-            // _inAppIconOffset is native offset (0 -> max screen size),
-            // If not _getNormalizedInAppIconOffset, the new offset (with delta)
-            // maybe outsize screen
-            // => delay position when on max width or height
+            if (!_isShowingFunctions) {
+              movingAnimationController.stop();
+              // _inAppIconOffset is native offset (0 -> max screen size),
+              // If not _getNormalizedInAppIconOffset, the new offset (with delta)
+              // maybe outsize screen
+              // => delay position when on max width or height
 
-            final newOffset = _getNormalizedInAppIconOffset(
-                Offset(
-                  _inAppIconOffset!.dx + details.delta.dx,
-                  _inAppIconOffset!.dy + details.delta.dy,
-                ),
+              final newOffset = _getNormalizedInAppIconOffset(
+                  Offset(
+                    _inAppIconOffset!.dx + details.delta.dx,
+                    _inAppIconOffset!.dy + details.delta.dy,
+                  ),
+                  maxWidth: MediaQuery.of(context).size.width,
+                  maxHeight: MediaQuery.of(context).size.height,
+                  iconSize: iconSize);
+
+              _setInAppIconOffset(
+                newOffset,
+                maxHeight: MediaQuery.of(context).size.height,
+                maxWidth: MediaQuery.of(context).size.width,
+                iconSize: iconSize,
+              );
+              final data = _calculateInAppIconEndpoint(
                 maxWidth: MediaQuery.of(context).size.width,
                 maxHeight: MediaQuery.of(context).size.height,
-                iconSize: iconSize);
-
-            _setInAppIconOffset(
-              newOffset,
-              maxHeight: MediaQuery.of(context).size.height,
-              maxWidth: MediaQuery.of(context).size.width,
-              iconSize: iconSize,
-            );
-            final data = _calculateInAppIconEndpoint(
-              maxWidth: MediaQuery.of(context).size.width,
-              maxHeight: MediaQuery.of(context).size.height,
-            );
-            _endPointInAppIconOffset = data.endpoint;
-            _currentEdge = data.screenEdge;
-            overlayState?.setState(() {});
+              );
+              _endPointInAppIconOffset = data.endpoint;
+              _currentEdge = data.screenEdge;
+              overlayState?.setState(() {});
+            }
           },
           onPanEnd: (details) {
-            _runMovingAnimation(
-              startOffset: _inAppIconOffset!,
-              endOffset: _endPointInAppIconOffset!,
-              pixelsPerSecond: details.velocity.pixelsPerSecond,
-              movingAnimationController: movingAnimationController,
-              maxWidth: MediaQuery.of(context).size.width,
-              maxHeight: MediaQuery.of(context).size.height,
-            );
-            _historyInAppIconOffset.clear();
+            if (!_isShowingFunctions) {
+              _runMovingAnimation(
+                startOffset: _inAppIconOffset!,
+                endOffset: _endPointInAppIconOffset!,
+                pixelsPerSecond: details.velocity.pixelsPerSecond,
+                movingAnimationController: movingAnimationController,
+                maxWidth: MediaQuery.of(context).size.width,
+                maxHeight: MediaQuery.of(context).size.height,
+              );
+              _historyInAppIconOffset.clear();
+            }
           },
-          child: SizedBox(
-            width: iconSize,
-            height: iconSize,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.only(
-                left: _currentEdge == ScreenEdge.right
-                    ? iconSize * 2 / 3
-                    : _currentEdge == ScreenEdge.left
-                        ? 0
-                        : iconSize / 5,
-                top: _currentEdge == ScreenEdge.right ||
-                        _currentEdge == ScreenEdge.left
-                    ? 0
-                    : iconSize / 5,
-                right: _currentEdge == ScreenEdge.left
-                    ? iconSize * 2 / 3
-                    : _currentEdge == ScreenEdge.right
-                        ? 0
-                        : iconSize / 5,
-                bottom: _currentEdge == ScreenEdge.right ||
-                        _currentEdge == ScreenEdge.left
-                    ? 0
-                    : iconSize / 5,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(
-                    _currentEdge == ScreenEdge.left
-                        ? 0.0
-                        : _currentEdge == ScreenEdge.right
-                            ? iconSize / 8
-                            : iconSize,
-                  ),
-                  bottomLeft: Radius.circular(
-                    _currentEdge == ScreenEdge.left
-                        ? 0.0
-                        : _currentEdge == ScreenEdge.right
-                            ? iconSize / 8
-                            : iconSize,
-                  ),
-                  topRight: Radius.circular(
-                    _currentEdge == ScreenEdge.right
-                        ? 0.0
-                        : _currentEdge == ScreenEdge.left
-                            ? iconSize / 8
-                            : iconSize,
-                  ),
-                  bottomRight: Radius.circular(
-                    _currentEdge == ScreenEdge.right
-                        ? 0.0
-                        : _currentEdge == ScreenEdge.left
-                            ? iconSize / 8
-                            : iconSize,
-                  ),
-                ),
-                color: Colors.black.withOpacity(
-                  0.6,
-                ),
-              ),
-              padding: EdgeInsets.only(
-                left: _currentEdge == ScreenEdge.left ||
-                        _currentEdge == ScreenEdge.right
-                    ? iconSize / 20
-                    : iconSize / 60,
-                right: iconSize / 20,
-                top: iconSize / 14,
-                bottom: iconSize / 14,
-              ),
-              child: SvgPicture.asset(
-                'assets/flutter_logo.svg',
-                package: 'flutter_in_app_debugger',
-                color: Colors.white,
-                fit: BoxFit.contain,
-              ),
-            ),
+          child: InAppDebuggerIcon(
+            currentEdge: _currentEdge,
+            iconSize: _currentIconSize,
+            isShowingFunctions: _isShowingFunctions,
+            setIsShowingFunctions: setIsShowingFunctions,
           ),
         ),
       ),
@@ -293,6 +279,29 @@ class FlutterInAppDebuggerOverlayMixin {
   double _getNormalizedInAppIconOffsetMinHeight() {
     final viewInsert = MediaQueryData.fromWindow(window).padding;
     return viewInsert.top;
+  }
+
+  void _createChangingSizeAnimation({
+    required AnimationController animationController,
+    required double startSize,
+    required double endSize,
+  }) {
+    _sizeAnimation = animationController.drive(
+      Tween<double>(
+        begin: startSize,
+        end: endSize,
+      ),
+    );
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
+
+    final simulation = SpringSimulation(spring, 0, 1, 20);
+
+    animationController.animateWith(simulation);
+    animationController.stop();
   }
 
   void _runMovingAnimation({
@@ -421,14 +430,4 @@ class FlutterInAppDebuggerOverlayMixin {
       iconSize: iconSize,
     );
   }
-}
-
-class InAppIconEndpoint {
-  final Offset endpoint;
-  final ScreenEdge? screenEdge;
-
-  InAppIconEndpoint({
-    required this.endpoint,
-    this.screenEdge,
-  });
 }
