@@ -12,34 +12,35 @@ import '../views/in_app_debugger_icon.dart';
 
 class FlutterInAppDebuggerOverlayMixin {
   late OverlayEntry _overlayEntry;
+  late BuildContext _context;
 
   late double _settingIconSize;
-
   final _showingFunctionsSize = 180.0;
-
+  final _showingFunctionsPadding = 16.0;
   var _currentIconSize = 0.0;
+  bool _isShowingFunctions = false;
 
+  // current edge where the in app icon is
+  ScreenEdge? _currentEdge;
+
+  // Animation for position when user end drag
   late AnimationController _movingAnimationController;
-
   late Animation<Offset> _movingAnimation;
 
+  // Animation for resizing when user tap
   late AnimationController _sizeAnimationController;
   late Animation<double> _sizeAnimation;
 
-  late BuildContext _context;
+  late AnimationController _resizingMovingAnimationController;
+  late Animation<Offset> _resizingMovingAnimation;
 
-  bool _isShowingFunctions = false;
-  void setIsShowingFunctions(bool newValue) {
-    _isShowingFunctions = newValue;
-    Overlay.of(_context)?.setState(() {});
-  }
+  Offset? _changingSizeStartOffset;
 
   // Current offset
   Offset? _inAppIconOffset;
-  ScreenEdge? _currentEdge;
 
   // Normalize the position of current offset
-  Offset? _normalizedInAppIconOffset;
+  Offset _normalizedInAppIconOffset = const Offset(0, 0);
   // Last offset for calculate end point
   final _historyInAppIconOffset = <Offset>[];
 
@@ -61,6 +62,13 @@ class FlutterInAppDebuggerOverlayMixin {
       ),
     );
 
+    _resizingMovingAnimationController = AnimationController(
+      vsync: vsync,
+      duration: const Duration(
+        milliseconds: 200,
+      ),
+    );
+
     _movingAnimationController.addListener(() {
       Overlay.of(context)?.setState(() {
         _inAppIconOffset = _movingAnimation.value;
@@ -68,15 +76,34 @@ class FlutterInAppDebuggerOverlayMixin {
           _movingAnimation.value,
           maxHeight: MediaQuery.of(context).size.height,
           maxWidth: MediaQuery.of(context).size.width,
-          iconSize: _settingIconSize,
+          iconSize: _currentIconSize,
         );
       });
+    });
+
+    _resizingMovingAnimationController.addListener(() {
+      Overlay.of(context)?.setState(() {
+        _inAppIconOffset = _resizingMovingAnimation.value;
+        _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(
+          _resizingMovingAnimation.value,
+          maxHeight: MediaQuery.of(context).size.height,
+          maxWidth: MediaQuery.of(context).size.width,
+          iconSize: _currentIconSize,
+        );
+      });
+      if (_resizingMovingAnimationController.isCompleted &&
+          !_isShowingFunctions) {
+        Overlay.of(context)?.setState(() {
+          _inAppIconOffset = _changingSizeStartOffset;
+          _normalizedInAppIconOffset = _changingSizeStartOffset!;
+        });
+      }
     });
 
     _sizeAnimationController = AnimationController(
       vsync: vsync,
       duration: const Duration(
-        milliseconds: 100,
+        milliseconds: 200,
       ),
     );
 
@@ -88,41 +115,14 @@ class FlutterInAppDebuggerOverlayMixin {
 
     _sizeAnimationController.addListener(() {
       Overlay.of(context)?.setState(() {
-        // if delta > 0 => need update _normalizedInAppIconOffset to keep on size
-        final deltaChange = _currentIconSize - _sizeAnimation.value;
-        late Offset newOffset;
-        print(_normalizedInAppIconOffset);
-        print(_normalizedInAppIconOffset!.dx);
-
-        print(_normalizedInAppIconOffset!.dx ==
-            _getNormalizedInAppIconOffsetMinWidth());
-        print('deltaChange: $deltaChange');
-        final isOnSideHorizontal = (_normalizedInAppIconOffset!.dx -
-                    _getNormalizedInAppIconOffsetMinWidth())
-                .abs() <
-            1;
-        if (deltaChange >= 0) {
-          newOffset = Offset(
-              isOnSideHorizontal
-                  ? _getNormalizedInAppIconOffsetMinWidth()
-                  : _normalizedInAppIconOffset!.dx + deltaChange,
-              _normalizedInAppIconOffset!.dy);
-        } else {
-          newOffset = _normalizedInAppIconOffset!;
-        }
-        print('newOffset: $newOffset');
         _currentIconSize = _sizeAnimation.value;
-        if (_normalizedInAppIconOffset != null) {
-          _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(
-            newOffset,
-            maxHeight: MediaQuery.of(context).size.height,
-            maxWidth: MediaQuery.of(context).size.width,
-            iconSize: _currentIconSize,
-          );
-          print('after change: $_normalizedInAppIconOffset');
-        }
+        _normalizedInAppIconOffset = _getNormalizedInAppIconOffset(
+          _normalizedInAppIconOffset,
+          maxHeight: MediaQuery.of(context).size.height,
+          maxWidth: MediaQuery.of(context).size.width,
+          iconSize: _currentIconSize,
+        );
       });
-      print(_currentIconSize);
     });
 
     WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
@@ -156,72 +156,133 @@ class FlutterInAppDebuggerOverlayMixin {
     );
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
-      builder: (context) => AnimatedPositioned(
-        duration: const Duration(milliseconds: 50),
-        top: _normalizedInAppIconOffset?.dy,
-        left: _normalizedInAppIconOffset?.dx,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
+      builder: (context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          if (_isShowingFunctions) {
             _sizeAnimationController.stop();
-            setIsShowingFunctions(!_isShowingFunctions);
-            if (_isShowingFunctions) {
-              _sizeAnimationController.forward();
-            } else {
-              _sizeAnimationController.reverse();
-            }
-          },
-          onPanUpdate: (details) {
-            if (!_isShowingFunctions) {
-              movingAnimationController.stop();
-              // _inAppIconOffset is native offset (0 -> max screen size),
-              // If not _getNormalizedInAppIconOffset, the new offset (with delta)
-              // maybe outsize screen
-              // => delay position when on max width or height
+            final isShowingFunctions = !_isShowingFunctions;
+            _setIsShowingFunctions(isShowingFunctions);
+            _runMinimalInAppIconSizeAnimation(context);
+          }
+        },
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 50),
+              top: _normalizedInAppIconOffset.dy,
+              left: _normalizedInAppIconOffset.dx,
+              child: GestureDetector(
+                onTap: () {
+                  _sizeAnimationController.stop();
+                  final isShowingFunctions = !_isShowingFunctions;
+                  _setIsShowingFunctions(isShowingFunctions);
+                  if (_isShowingFunctions) {
+                    if (!_resizingMovingAnimationController.isAnimating) {
+                      _changingSizeStartOffset = _normalizedInAppIconOffset;
+                    }
+                    final totalSize =
+                        _showingFunctionsSize + _showingFunctionsPadding;
+                    late Offset rawOffset;
+                    final isOnLeftSide = (_changingSizeStartOffset!.dx -
+                                _getNormalizedInAppIconOffsetMinWidth())
+                            .abs() <
+                        1;
 
-              final newOffset = _getNormalizedInAppIconOffset(
-                  Offset(
-                    _inAppIconOffset!.dx + details.delta.dx,
-                    _inAppIconOffset!.dy + details.delta.dy,
-                  ),
-                  maxWidth: MediaQuery.of(context).size.width,
-                  maxHeight: MediaQuery.of(context).size.height,
-                  iconSize: iconSize);
+                    final isOnRightSide = (_changingSizeStartOffset!.dx -
+                                _getNormalizedInAppIconOffsetMaxWidth(
+                                  maxWidth: MediaQuery.of(context).size.width,
+                                  iconSize: iconSize,
+                                ))
+                            .abs() <
+                        1;
 
-              _setInAppIconOffset(
-                newOffset,
-                maxHeight: MediaQuery.of(context).size.height,
-                maxWidth: MediaQuery.of(context).size.width,
-                iconSize: iconSize,
-              );
-              final data = _calculateInAppIconEndpoint(
-                maxWidth: MediaQuery.of(context).size.width,
-                maxHeight: MediaQuery.of(context).size.height,
-              );
-              _endPointInAppIconOffset = data.endpoint;
-              _currentEdge = data.screenEdge;
-              overlayState?.setState(() {});
-            }
-          },
-          onPanEnd: (details) {
-            if (!_isShowingFunctions) {
-              _runMovingAnimation(
-                startOffset: _inAppIconOffset!,
-                endOffset: _endPointInAppIconOffset!,
-                pixelsPerSecond: details.velocity.pixelsPerSecond,
-                movingAnimationController: movingAnimationController,
-                maxWidth: MediaQuery.of(context).size.width,
-                maxHeight: MediaQuery.of(context).size.height,
-              );
-              _historyInAppIconOffset.clear();
-            }
-          },
-          child: InAppDebuggerIcon(
-            currentEdge: _currentEdge,
-            iconSize: _currentIconSize,
-            isShowingFunctions: _isShowingFunctions,
-            setIsShowingFunctions: setIsShowingFunctions,
-          ),
+                    if (isOnLeftSide || isOnRightSide) {
+                      rawOffset = Offset(
+                        _normalizedInAppIconOffset.dx,
+                        _normalizedInAppIconOffset.dy,
+                      );
+                    } else {
+                      rawOffset = Offset(
+                        _normalizedInAppIconOffset.dx,
+                        _normalizedInAppIconOffset.dy,
+                      );
+                    }
+                    final changingSizeEndOffset = _getNormalizedInAppIconOffset(
+                      rawOffset,
+                      maxWidth: MediaQuery.of(context).size.width,
+                      maxHeight: MediaQuery.of(context).size.height,
+                      iconSize: totalSize,
+                    );
+                    _runResizingMovingAnimation(
+                      startOffset: _changingSizeStartOffset!,
+                      endOffset: changingSizeEndOffset,
+                      pixelsPerSecond: const Offset(10, 10),
+                      maxWidth: MediaQuery.of(context).size.width,
+                      maxHeight: MediaQuery.of(context).size.height,
+                    );
+                    _sizeAnimationController.forward();
+                  } else {
+                    _runMinimalInAppIconSizeAnimation(context);
+                  }
+                },
+                onPanUpdate: (details) {
+                  if (!_isShowingFunctions) {
+                    movingAnimationController.stop();
+                    // _inAppIconOffset is native offset (0 -> max screen size),
+                    // If not _getNormalizedInAppIconOffset, the new offset (with delta)
+                    // maybe outsize screen
+                    // => delay position when on max width or height
+
+                    final newOffset = _getNormalizedInAppIconOffset(
+                        Offset(
+                          _inAppIconOffset!.dx + details.delta.dx,
+                          _inAppIconOffset!.dy + details.delta.dy,
+                        ),
+                        maxWidth: MediaQuery.of(context).size.width,
+                        maxHeight: MediaQuery.of(context).size.height,
+                        iconSize: iconSize);
+
+                    _setInAppIconOffset(
+                      newOffset,
+                      maxHeight: MediaQuery.of(context).size.height,
+                      maxWidth: MediaQuery.of(context).size.width,
+                      iconSize: iconSize,
+                    );
+                    final data = _calculateInAppIconEndpoint(
+                      maxWidth: MediaQuery.of(context).size.width,
+                      maxHeight: MediaQuery.of(context).size.height,
+                    );
+                    _endPointInAppIconOffset = data.endpoint;
+                    _currentEdge = data.screenEdge;
+                    print(_currentEdge);
+                    overlayState?.setState(() {});
+                  }
+                },
+                onPanEnd: (details) {
+                  if (!_isShowingFunctions) {
+                    _runMovingAnimation(
+                      startOffset: _inAppIconOffset!,
+                      endOffset: _endPointInAppIconOffset!,
+                      pixelsPerSecond: details.velocity.pixelsPerSecond,
+                      movingAnimationController: movingAnimationController,
+                      maxWidth: MediaQuery.of(context).size.width,
+                      maxHeight: MediaQuery.of(context).size.height,
+                    );
+                    _historyInAppIconOffset.clear();
+                  }
+                },
+                child: InAppDebuggerIcon(
+                  currentEdge: _currentEdge,
+                  iconSize: _currentIconSize,
+                  isShowingFunctions: _isShowingFunctions,
+                  setIsShowingFunctions: _setIsShowingFunctions,
+                  showingFunctionsPadding:
+                      EdgeInsets.all(_showingFunctionsPadding),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -316,16 +377,6 @@ class FlutterInAppDebuggerOverlayMixin {
         end: endSize,
       ),
     );
-    const spring = SpringDescription(
-      mass: 30,
-      stiffness: 1,
-      damping: 1,
-    );
-
-    final simulation = SpringSimulation(spring, 0, 1, 20);
-
-    animationController.animateWith(simulation);
-    animationController.stop();
   }
 
   void _runMovingAnimation({
@@ -361,6 +412,38 @@ class FlutterInAppDebuggerOverlayMixin {
     movingAnimationController.animateWith(simulation);
   }
 
+  void _runResizingMovingAnimation({
+    required Offset startOffset,
+    required Offset endOffset,
+    required Offset pixelsPerSecond,
+    required double maxWidth,
+    required double maxHeight,
+  }) {
+    _resizingMovingAnimation = _resizingMovingAnimationController.drive(
+      Tween<Offset>(
+        begin: startOffset,
+        end: endOffset,
+      ),
+    );
+
+    // Calculate the velocity relative to the unit interval, [0,1],
+    // used by the animation controller.
+    final unitsPerSecondX = pixelsPerSecond.dx / maxWidth;
+    final unitsPerSecondY = pixelsPerSecond.dy / maxHeight;
+    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
+    final unitVelocity = unitsPerSecond.distance;
+
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
+
+    final simulation = SpringSimulation(spring, 0, 1, unitVelocity);
+
+    _resizingMovingAnimationController.animateWith(simulation);
+  }
+
   /// Calculate the end point after the user finishes interacting with the icon.
   /// There will be 2 cases to handle:
   /// - Moving case => calculate endpoint.
@@ -378,8 +461,6 @@ class FlutterInAppDebuggerOverlayMixin {
           _historyInAppIconOffset[_historyInAppIconOffset.length - 12];
     }
 
-    ScreenEdge? currentEdge;
-
     final startPoint = lastInAppIconPoint;
     final endPoint = _inAppIconOffset!;
     final minNormalizedWidth = _getNormalizedInAppIconOffsetMinWidth();
@@ -394,6 +475,8 @@ class FlutterInAppDebuggerOverlayMixin {
     );
 
     const deltaPosition = 15;
+
+    ScreenEdge? currentEdge;
 
     if (startPoint.dx == minNormalizedWidth &&
         endPoint.dx == minNormalizedWidth &&
@@ -412,7 +495,7 @@ class FlutterInAppDebuggerOverlayMixin {
         (startPoint.dx - endPoint.dx).abs() < deltaPosition) {
       currentEdge = ScreenEdge.bottom;
     }
-    print(currentEdge);
+    print('currentEdge: $currentEdge');
     if (currentEdge != null) {
       return InAppIconEndpoint(
         endpoint: _inAppIconOffset!,
@@ -453,5 +536,21 @@ class FlutterInAppDebuggerOverlayMixin {
       maxWidth: maxWidth,
       iconSize: iconSize,
     );
+  }
+
+  void _setIsShowingFunctions(bool newValue) {
+    _isShowingFunctions = newValue;
+    Overlay.of(_context)?.setState(() {});
+  }
+
+  void _runMinimalInAppIconSizeAnimation(BuildContext context) {
+    _runResizingMovingAnimation(
+      startOffset: _normalizedInAppIconOffset,
+      endOffset: _changingSizeStartOffset!,
+      pixelsPerSecond: const Offset(10, 10),
+      maxWidth: MediaQuery.of(context).size.width,
+      maxHeight: MediaQuery.of(context).size.height,
+    );
+    _sizeAnimationController.reverse();
   }
 }

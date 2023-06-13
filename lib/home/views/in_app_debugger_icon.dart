@@ -10,6 +10,7 @@ class InAppDebuggerIcon extends StatelessWidget {
     required this.iconSize,
     required this.isShowingFunctions,
     required this.setIsShowingFunctions,
+    required this.showingFunctionsPadding,
   })  : _currentEdge = currentEdge,
         super(key: key);
 
@@ -17,25 +18,28 @@ class InAppDebuggerIcon extends StatelessWidget {
   final double iconSize;
   final bool isShowingFunctions;
   final void Function(bool newValue) setIsShowingFunctions;
+  final EdgeInsets showingFunctionsPadding;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: iconSize,
       height: iconSize,
-      color: Colors.green,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: _calculateMargin(),
+        margin:
+            isShowingFunctions ? showingFunctionsPadding : _calculateMargin(),
         decoration: BoxDecoration(
-          borderRadius: _calculateBorderRadius(),
+          borderRadius: isShowingFunctions
+              ? BorderRadius.circular(20)
+              : _calculateBorderRadius(),
           color: Colors.black.withOpacity(
             0.6,
           ),
         ),
         padding: _calculatePadding(),
         child: isShowingFunctions
-            ? const Text('functions')
+            ? null
             : SvgPicture.asset(
                 'assets/flutter_logo.svg',
                 package: 'flutter_in_app_debugger',
