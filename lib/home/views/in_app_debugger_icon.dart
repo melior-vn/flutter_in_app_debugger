@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_in_app_debugger/console/console_view.dart';
+import 'package:flutter_in_app_debugger/networks/views/network_view.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../enums.dart';
@@ -11,6 +15,9 @@ class InAppDebuggerIcon extends StatelessWidget {
     required this.isShowingFunctions,
     required this.setIsShowingFunctions,
     required this.showingFunctionsPadding,
+    required this.addOverlay,
+    required this.removeOverlay,
+    required this.runMinimalInAppIconSizeAnimation,
   })  : _currentEdge = currentEdge,
         super(key: key);
 
@@ -19,6 +26,9 @@ class InAppDebuggerIcon extends StatelessWidget {
   final bool isShowingFunctions;
   final void Function(bool newValue) setIsShowingFunctions;
   final EdgeInsets showingFunctionsPadding;
+  final void Function() removeOverlay;
+  final void Function() addOverlay;
+  final void Function() runMinimalInAppIconSizeAnimation;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +36,7 @@ class InAppDebuggerIcon extends StatelessWidget {
       width: iconSize,
       height: iconSize,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 100),
         margin:
             isShowingFunctions ? showingFunctionsPadding : _calculateMargin(),
         decoration: BoxDecoration(
@@ -39,15 +49,51 @@ class InAppDebuggerIcon extends StatelessWidget {
         ),
         padding: _calculatePadding(),
         child: isShowingFunctions
-            ? null
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  FunctionIcon(
+                    iconPath:
+                        'assets/icons/network_manage_FILL0_wght400_GRAD0_opsz48.svg',
+                    onTap: () => _hideAndShowInAppIcon(
+                      function: Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NetworkView(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  FunctionIcon(
+                    iconPath:
+                        'assets/icons/terminal_FILL0_wght400_GRAD0_opsz48.svg',
+                    onTap: () => _hideAndShowInAppIcon(
+                      function: Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ConsoleView(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
             : SvgPicture.asset(
-                'assets/flutter_logo.svg',
+                'assets/logos/flutter_logo.svg',
                 package: 'flutter_in_app_debugger',
                 color: Colors.white,
                 fit: BoxFit.contain,
               ),
       ),
     );
+  }
+
+  void _hideAndShowInAppIcon({required FutureOr function}) async {
+    removeOverlay();
+    runMinimalInAppIconSizeAnimation();
+    await function;
+    addOverlay();
   }
 
   EdgeInsets _calculatePadding() {
@@ -114,5 +160,32 @@ class InAppDebuggerIcon extends StatelessWidget {
               ? 0
               : iconSize / 5,
     );
+  }
+}
+
+class FunctionIcon extends StatelessWidget {
+  const FunctionIcon({
+    required this.iconPath,
+    required this.onTap,
+    Key? key,
+  }) : super(key: key);
+
+  final String iconPath;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+        child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.translucent,
+      child: SvgPicture.asset(
+        iconPath,
+        package: 'flutter_in_app_debugger',
+        width: 30,
+        height: 30,
+        color: Colors.white,
+      ),
+    ));
   }
 }

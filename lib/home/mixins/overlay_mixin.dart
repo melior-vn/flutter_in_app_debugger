@@ -157,12 +157,11 @@ class FlutterInAppDebuggerOverlayMixin {
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
       builder: (context) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
+        behavior: _isShowingFunctions
+            ? HitTestBehavior.translucent
+            : HitTestBehavior.deferToChild,
         onTap: () {
           if (_isShowingFunctions) {
-            _sizeAnimationController.stop();
-            final isShowingFunctions = !_isShowingFunctions;
-            _setIsShowingFunctions(isShowingFunctions);
             _runMinimalInAppIconSizeAnimation(context);
           }
         },
@@ -174,10 +173,11 @@ class FlutterInAppDebuggerOverlayMixin {
               left: _normalizedInAppIconOffset.dx,
               child: GestureDetector(
                 onTap: () {
-                  _sizeAnimationController.stop();
                   final isShowingFunctions = !_isShowingFunctions;
-                  _setIsShowingFunctions(isShowingFunctions);
-                  if (_isShowingFunctions) {
+
+                  if (isShowingFunctions) {
+                    _sizeAnimationController.stop();
+                    _setIsShowingFunctions(true);
                     if (!_resizingMovingAnimationController.isAnimating) {
                       _changingSizeStartOffset = _normalizedInAppIconOffset;
                     }
@@ -279,6 +279,10 @@ class FlutterInAppDebuggerOverlayMixin {
                   setIsShowingFunctions: _setIsShowingFunctions,
                   showingFunctionsPadding:
                       EdgeInsets.all(_showingFunctionsPadding),
+                  removeOverlay: _removeOverlay,
+                  addOverlay: () => _addOverlay(_context),
+                  runMinimalInAppIconSizeAnimation: () =>
+                      _runMinimalInAppIconSizeAnimation(context),
                 ),
               ),
             ),
@@ -292,18 +296,6 @@ class FlutterInAppDebuggerOverlayMixin {
 
   void _addOverlay(BuildContext context) {
     Overlay.of(context)?.insert(_overlayEntry);
-  }
-
-  void _onPressed() async {
-    _removeOverlay();
-
-    await Navigator.push(
-      _context,
-      MaterialPageRoute(
-        builder: (context) => const HomeView(),
-      ),
-    );
-    _addOverlay(_context);
   }
 
   void _removeOverlay() {
@@ -495,7 +487,6 @@ class FlutterInAppDebuggerOverlayMixin {
         (startPoint.dx - endPoint.dx).abs() < deltaPosition) {
       currentEdge = ScreenEdge.bottom;
     }
-    print('currentEdge: $currentEdge');
     if (currentEdge != null) {
       return InAppIconEndpoint(
         endpoint: _inAppIconOffset!,
@@ -544,6 +535,8 @@ class FlutterInAppDebuggerOverlayMixin {
   }
 
   void _runMinimalInAppIconSizeAnimation(BuildContext context) {
+    _sizeAnimationController.stop();
+    _setIsShowingFunctions(false);
     _runResizingMovingAnimation(
       startOffset: _normalizedInAppIconOffset,
       endOffset: _changingSizeStartOffset!,

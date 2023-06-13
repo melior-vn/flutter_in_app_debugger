@@ -47,6 +47,14 @@ class _MyAppState extends State<MyApp> {
             const Center(
               child: Text('Running on: something\n'),
             ),
+            Positioned(
+              width: 100,
+              height: 100,
+              child: ElevatedButton(
+                onPressed: () {},
+                child: Text('text'),
+              ),
+            ),
             FlutterInAppDebuggerView()
           ],
         ),
