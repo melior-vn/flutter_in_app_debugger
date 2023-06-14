@@ -27,31 +27,23 @@ class _MyAppState extends State<MyApp> {
       fakeDataType: FakeDataType.randomResponse,
     );
     WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
-      print('fake exception');
       Future.delayed(const Duration(seconds: 3))
           .then((value) => throw Exception('fake exception'));
-      print('fake exception');
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            const Center(
-              child: Text('Running on: something\n'),
-            ),
-            FlutterInAppDebuggerView(
-              hasRemoteServer: false,
-              hostRemoteServer: "http://localhost:8000",
-            )
-          ],
+      home: FlutterInAppDebuggerView(
+        hostRemoteServer: "http://localhost:8000",
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Plugin example app'),
+          ),
+          body: const Center(
+            child: Text('Running on: something\n'),
+          ),
         ),
       ),
     );

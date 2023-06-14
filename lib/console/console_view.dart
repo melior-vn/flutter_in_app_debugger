@@ -64,7 +64,7 @@ class _ConsoleViewState extends State<ConsoleView> {
                     padding: const EdgeInsets.all(DEFAULT_PADDING),
                     child: Text(
                       '$formatedTime : ${log.message}${log.stackTrace != null ? '\n${log.stackTrace}' : ''}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 15,
                       ),
                     ),

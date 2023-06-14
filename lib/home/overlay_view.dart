@@ -14,16 +14,15 @@ import 'package:flutter_in_app_debugger/services/models/network.dart';
 import 'package:flutter_in_app_debugger/services/repositories/console.dart';
 import 'package:flutter_in_app_debugger/services/repositories/device.dart';
 import 'package:flutter_in_app_debugger/services/repositories/network.dart';
-import 'package:flutter_in_app_debugger/shared/animations/linear_moving_animation.dart';
 
 import 'mixins/overlay_mixin.dart';
 
 class FlutterInAppDebuggerView extends StatefulWidget {
-  final bool hasRemoteServer;
   final String? hostRemoteServer;
+  final Widget? child;
 
   FlutterInAppDebuggerView({
-    this.hasRemoteServer = false,
+    this.child,
     this.hostRemoteServer,
   }) : super(key: FlutterInAppDebuggerView.globalKey);
 
@@ -102,13 +101,12 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constrants) {
-      return Stack(
-        children: const [
-          SizedBox.shrink(),
-        ],
-      );
-    });
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child ?? const SizedBox.shrink(),
+      ],
+    );
   }
 
   @override
@@ -196,73 +194,77 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
   }
 
   Future<void> _connectDevice(bool isOnline) async {
-    if(!widget.hasRemoteServer) return;
-    final deviceInfo = await _getDeviceInfo();
-    DeviceModel device = DeviceModel(
-      deviceId: deviceInfo?[0] ?? "",
-      deviceName: deviceInfo?[1] ?? "",
-      isOnline: isOnline,
-    );
+    if (widget.hostRemoteServer?.isNotEmpty == true) {
+      final deviceInfo = await _getDeviceInfo();
+      DeviceModel device = DeviceModel(
+        deviceId: deviceInfo?[0] ?? "",
+        deviceName: deviceInfo?[1] ?? "",
+        isOnline: isOnline,
+      );
 
-    await DeviceRepository().connectDevice(device);
+      await DeviceRepository().connectDevice(device);
+    }
   }
 
   Future<void> _createConsole(LogEvent logEvent) async {
-    if(!widget.hasRemoteServer) return;
-    var _deviceId = deviceId;
-    if (_deviceId == null) {
-      final deviceInfo = await _getDeviceInfo();
-      _deviceId = deviceInfo?[0];
+    if (widget.hostRemoteServer?.isNotEmpty == true) {
+      var _deviceId = deviceId;
+      if (_deviceId == null) {
+        final deviceInfo = await _getDeviceInfo();
+        _deviceId = deviceInfo?[0];
+      }
+
+      final content = "${logEvent.message}\n${logEvent.stackTrace ?? ""}";
+
+      ConsoleModel console = ConsoleModel(
+        deviceId: _deviceId ?? "",
+        content: content,
+      );
+
+      await ConsoleRepository().createConsole(console);
     }
-
-    final content = "${logEvent.message}\n${logEvent.stackTrace ?? ""}";
-
-    ConsoleModel console = ConsoleModel(
-      deviceId: _deviceId ?? "",
-      content: content,
-    );
-
-    await ConsoleRepository().createConsole(console);
   }
 
   Future<void> _createNetwork(NetworkEvent networkEvent) async {
-    if(!widget.hasRemoteServer) return;
-    var _deviceId = deviceId;
-    if (_deviceId == null) {
-      final deviceInfo = await _getDeviceInfo();
-      _deviceId = deviceInfo?[0];
-    }
+    if (widget.hostRemoteServer?.isNotEmpty == true) {
+      var _deviceId = deviceId;
+      if (_deviceId == null) {
+        final deviceInfo = await _getDeviceInfo();
+        _deviceId = deviceInfo?[0];
+      }
 
-    int statusCode = 0;
-    String responseData = "";
+      int statusCode = 0;
+      String responseData = "";
 
-    switch (networkEvent.status) {
-      case NetworkRequestStatus.done:
-        statusCode = networkEvent.response?.statusCode ?? 200;
-        responseData = jsonEncode(networkEvent.response?.responseData);
-        break;
-      case NetworkRequestStatus.failed:
-        if (networkEvent.error != null && networkEvent.error!.error is DioError) {
-          var error = networkEvent.error!.error as DioError;
-          statusCode = error.response?.statusCode ?? 999;
-          responseData = jsonEncode(error.response?.data);
-        } else {
+      switch (networkEvent.status) {
+        case NetworkRequestStatus.done:
+          statusCode = networkEvent.response?.statusCode ?? 200;
+          responseData = jsonEncode(networkEvent.response?.responseData);
+          break;
+        case NetworkRequestStatus.failed:
+          if (networkEvent.error != null &&
+              networkEvent.error!.error is DioError) {
+            var error = networkEvent.error!.error as DioError;
+            statusCode = error.response?.statusCode ?? 999;
+            responseData = jsonEncode(error.response?.data);
+          } else {
+            return;
+          }
+          break;
+        default:
           return;
-        }
-        break;
-      default:
-        return;
+      }
+
+      NetworkModel network = NetworkModel(
+          deviceId: _deviceId ?? "",
+          method: networkEvent.request.method,
+          path: networkEvent.request.path,
+          statusCode: statusCode,
+          request: jsonEncode(networkEvent.request.requestData),
+          response: responseData);
+
+      await NetworkRepository().createNetwork(network);
     }
-
-    NetworkModel network = NetworkModel(
-        deviceId: _deviceId ?? "",
-        method: networkEvent.request.method,
-        path: networkEvent.request.path,
-        statusCode: statusCode,
-        request: jsonEncode(networkEvent.request.requestData),
-        response: responseData);
-
-    await NetworkRepository().createNetwork(network);
   }
 
   Future<List<String?>?> _getDeviceInfo() async {
@@ -285,9 +287,5 @@ class _FlutterInAppDebuggerViewState extends State<FlutterInAppDebuggerView>
 
   String? getHostRemoteServer() {
     return widget.hostRemoteServer;
-  }
-
-  bool hasRemoteServer() {
-    return widget.hasRemoteServer;
   }
 }
