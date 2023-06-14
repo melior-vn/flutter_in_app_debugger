@@ -1,7 +1,7 @@
 name: flutter_in_app_debugger
-description: A new Flutter plugin project.
+description: A library that supports debugging in the app or on the web via a remote server
 version: 0.0.9
-homepage: 'any thing'
+homepage: 'https://github.com/melior-vn/flutter_in_app_debugger'
 
 environment:
   sdk: '>=2.15.0 <3.0.0'
