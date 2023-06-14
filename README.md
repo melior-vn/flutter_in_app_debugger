@@ -1,19 +1,36 @@
 # flutter_in_app_debugger
 
-A new Flutter plugin project.
+A library that supports debugging in the app or on the web via a remote server (in development).
 
-## Getting Started
+Current functions:
+- Network inspector.
+- Log view
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+## Installation Instructions
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Use this package as a library by depending on it
 
-The plugin project was generated without specifying the `--platforms` flag, no platforms are currently supported.
-To add platforms, run `flutter create -t plugin --platforms <platforms> .` in this directory.
-You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
-# flutter_in_app_debugger
+Run this command:
+
+- With Flutter:
+
+```dart
+$ flutter pub flutter_in_app_debugger
+```
+
+This will add a line like this to your package's pubspec.yaml (and run an implicit dart pub get):
+
+```dart
+dependencies:
+  debug_logger: ^{lastest version}
+```
+
+Alternatively, your editor might support flutter pub get. Check the docs for your editor to learn more.
+
+Lastly:
+
+Import it like so:
+
+```dart
+import 'package:flutter_in_app_debugger/home/overlay_view.dart';
+```
