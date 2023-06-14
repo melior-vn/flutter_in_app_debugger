@@ -132,7 +132,7 @@ class _RequestDetailViewState extends State<RequestDetailView>
                 value: RequestActionType.copycURL,
                 child: Row(children: [
                   SvgPicture.asset(
-                    'assets/postman_logo.svg',
+                    'assets/logos/postman_logo.svg',
                     package: 'flutter_in_app_debugger',
                     width: 24,
                     height: 24,
